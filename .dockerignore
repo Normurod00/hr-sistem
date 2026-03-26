@@ -1,0 +1,16 @@
+.git
+.env
+.env.local
+node_modules
+vendor
+storage/logs/*
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+storage/app/db_export
+tests
+.osp
+temp
+docker
+*.md
+!README.md

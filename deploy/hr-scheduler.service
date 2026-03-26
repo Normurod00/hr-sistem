@@ -1,0 +1,15 @@
+[Unit]
+Description=HR Robot Laravel Scheduler
+After=network.target mysql.service
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/hr-brb
+ExecStart=/bin/bash -c 'while true; do /usr/bin/php artisan schedule:run --verbose --no-interaction >> /var/log/hr-robot/scheduler.log 2>&1; sleep 60; done'
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

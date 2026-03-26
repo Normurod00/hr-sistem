@@ -1,0 +1,29 @@
+# HR AI Server - Rule-Based Version
+# Python 3.10+ (минимальные зависимости, без LLM)
+
+# Web Framework
+fastapi>=0.104.0
+uvicorn>=0.24.0
+pydantic>=2.5.0
+
+# Document Processing
+python-docx>=1.0.0
+PyPDF2>=3.0.0
+pdfplumber>=0.10.0
+python-multipart>=0.0.6
+
+# OCR для сканированных PDF (опционально)
+# Требует установки Tesseract OCR: https://github.com/tesseract-ocr/tesseract
+pdf2image>=1.16.0
+pytesseract>=0.3.10
+Pillow>=10.0.0
+
+# Config & Utils
+pyyaml>=6.0
+python-dotenv>=1.0.0
+
+# Rate Limiting (для защиты от перегрузок)
+slowapi>=0.1.9
+
+# Monitoring
+psutil>=5.9.0

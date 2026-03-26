@@ -1,0 +1,20 @@
+[Unit]
+Description=HR Robot AI Server (FastAPI)
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/hr-brb/ai_server
+Environment=PATH=/usr/bin:/usr/local/bin
+ExecStart=/usr/bin/python3 run.py
+Restart=always
+RestartSec=5
+
+# Логи
+StandardOutput=append:/var/log/hr-robot/ai-server.log
+StandardError=append:/var/log/hr-robot/ai-server-error.log
+
+[Install]
+WantedBy=multi-user.target
