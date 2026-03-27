@@ -77,8 +77,8 @@ class CandidateController extends Controller
             }
         }
 
-        // Список вакансий для фильтра
-        $vacancies = \App\Models\Vacancy::orderBy('title')->get();
+        // Список вакансий для фильтра (только id и title)
+        $vacancies = \App\Models\Vacancy::select('id', 'title')->orderBy('title')->get();
 
         return view('admin.candidates.index', compact('kanbanColumns', 'vacancies'));
     }

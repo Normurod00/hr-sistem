@@ -22,6 +22,7 @@ class User extends Authenticatable
         'avatar',
         'pin',
         'api_token',
+        'api_token_expires_at',
         'is_employee',
         'notification_preferences',
     ];
@@ -30,6 +31,7 @@ class User extends Authenticatable
         'password',
         'remember_token',
         'api_token',
+        'api_token_expires_at',
     ];
 
     protected function casts(): array
@@ -39,6 +41,7 @@ class User extends Authenticatable
             'password' => 'hashed',
             'role' => UserRole::class,
             'is_employee' => 'boolean',
+            'api_token_expires_at' => 'datetime',
             'notification_preferences' => 'array',
         ];
     }

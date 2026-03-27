@@ -513,7 +513,7 @@
             };
 
             pc.ontrack = (e) => {
-                console.log('Received remote track from', userId);
+                // Remote track received
                 if (!this.remoteStreams[userId]) {
                     this.remoteStreams[userId] = new MediaStream();
                 }
@@ -522,7 +522,7 @@
             };
 
             pc.onconnectionstatechange = () => {
-                console.log('Connection state:', pc.connectionState);
+                // Connection state changed
                 if (pc.connectionState === 'disconnected' || pc.connectionState === 'failed') {
                     this.handleUserLeft(userId);
                 }

@@ -37,11 +37,40 @@ return Application::configure(basePath: dirname(__DIR__))
             'audit' => \App\Http\Middleware\AuditEmployeeAction::class,
         ]);
 
-        // Временно ПОЛНОСТЬЮ отключаем CSRF для отладки
+        // CSRF исключения только для API и webhook маршрутов
         $middleware->validateCsrfTokens(except: [
-            '*',
+            'api/*',
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        $exceptions->renderable(function (\Symfony\Component\HttpKernel\Exception\NotFoundHttpException $e, $request) {
+            if ($request->is('api/*') || $request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'Ресурс не найден.'], 404);
+            }
+        });
+
+        $exceptions->renderable(function (\Illuminate\Auth\AuthenticationException $e, $request) {
+            if ($request->is('api/*') || $request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'Не авторизован.'], 401);
+            }
+        });
+
+        $exceptions->renderable(function (\Illuminate\Validation\ValidationException $e, $request) {
+            if ($request->is('api/*') || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Ошибка валидации.',
+                    'errors' => $e->errors(),
+                ], 422);
+            }
+        });
+
+        $exceptions->renderable(function (\Throwable $e, $request) {
+            if (!app()->hasDebugModeEnabled() && !$request->is('api/*') && !$request->wantsJson()) {
+                return;
+            }
+            if (!app()->hasDebugModeEnabled() && ($request->is('api/*') || $request->wantsJson())) {
+                return response()->json(['success' => false, 'message' => 'Внутренняя ошибка сервера.'], 500);
+            }
+        });
     })->create();

@@ -157,10 +157,19 @@ class MigrateToPostgres extends Command
     protected function resetSequence($table)
     {
         try {
+            // Валидация имени таблицы — только буквы, цифры, подчёркивания
+            if (!preg_match('/^[a-zA-Z_][a-zA-Z0-9_]*$/', $table)) {
+                $this->warn("Invalid table name: {$table}, skipping sequence reset.");
+                return;
+            }
+
             $maxId = DB::table($table)->max('id');
             if ($maxId) {
                 $sequence = "{$table}_id_seq";
-                DB::statement("SELECT setval('{$sequence}', {$maxId})");
+                DB::statement(
+                    "SELECT setval(?, ?)",
+                    [$sequence, $maxId]
+                );
             }
         } catch (\Exception $e) {
             // Table might not have an id column or sequence

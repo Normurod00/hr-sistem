@@ -33,6 +33,16 @@ class AuthenticateApiToken
             ], 401);
         }
 
+        // Проверяем срок действия токена
+        if ($user->api_token_expires_at && $user->api_token_expires_at->isPast()) {
+            $user->update(['api_token' => null, 'api_token_expires_at' => null]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Токен истёк. Выполните повторную авторизацию.',
+            ], 401);
+        }
+
         // Устанавливаем пользователя в request
         $request->setUserResolver(function () use ($user) {
             return $user;

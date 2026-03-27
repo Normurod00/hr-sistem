@@ -70,19 +70,19 @@ Route::get('/vacancies/{vacancy}', fn($vacancy) => redirect()->route('vacant.sho
 */
 
 Route::middleware('guest')->group(function () {
-    // Кандидаты - вход и регистрация
+    // Кандидаты - вход и регистрация (rate limit: 5 попыток в минуту)
     Route::get('/vacant/login', [CandidateAuthController::class, 'showLoginForm'])->name('candidate.login');
-    Route::post('/vacant/login', [CandidateAuthController::class, 'login']);
+    Route::post('/vacant/login', [CandidateAuthController::class, 'login'])->middleware('throttle:5,1');
     Route::get('/vacant/register', [RegisterController::class, 'showRegistrationForm'])->name('candidate.register');
-    Route::post('/vacant/register', [RegisterController::class, 'register']);
+    Route::post('/vacant/register', [RegisterController::class, 'register'])->middleware('throttle:5,1');
 
     // Сотрудники - вход (email/пароль)
     Route::get('/login', [EmployeeAuthController::class, 'showLoginForm'])->name('login');
-    Route::post('/login', [EmployeeAuthController::class, 'login']);
+    Route::post('/login', [EmployeeAuthController::class, 'login'])->middleware('throttle:5,1');
 
     // Админ - вход (email/пароль)
     Route::get('/admin/login', [LoginController::class, 'showLoginForm'])->name('admin.login');
-    Route::post('/admin/login', [LoginController::class, 'login']);
+    Route::post('/admin/login', [LoginController::class, 'login'])->middleware('throttle:5,1');
 });
 
 /*

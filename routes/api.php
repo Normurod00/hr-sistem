@@ -16,8 +16,8 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-// Публичные маршруты (без авторизации)
-Route::prefix('auth')->group(function () {
+// Публичные маршруты (без авторизации, rate limit: 5 попыток в минуту)
+Route::prefix('auth')->middleware('throttle:5,1')->group(function () {
     // Авторизация (email/пароль)
     Route::post('/login', [AuthController::class, 'login']);
 });

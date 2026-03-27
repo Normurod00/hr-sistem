@@ -98,7 +98,7 @@ class AuthController extends Controller
         $user = $request->user();
 
         if ($user) {
-            $user->update(['api_token' => null]);
+            $user->update(['api_token' => null, 'api_token_expires_at' => null]);
         }
 
         return response()->json([
@@ -116,6 +116,7 @@ class AuthController extends Controller
 
         $user->update([
             'api_token' => hash('sha256', $token),
+            'api_token_expires_at' => now()->addDays(7),
         ]);
 
         return $token;
