@@ -162,7 +162,13 @@
     const chatMessages = document.getElementById('chatMessages');
     const messageForm = document.getElementById('messageForm');
     const typingIndicator = document.getElementById('typingIndicator');
-    let lastMessageId = {{ $messages->last()?->id ?? 0 }};
+    let lastMessageId = @json($messages->last()?->id ?? 0);
+
+    function escapeHtml(str) {
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    }
 
     // Scroll to bottom
     function scrollToBottom() {
@@ -230,7 +236,7 @@
                     </div>
                     <div class="message-content ${isUser ? 'text-end' : ''}">
                         <div class="message-bubble p-3 rounded-3 ${isUser ? 'bg-primary text-white' : 'bg-light'}">
-                            ${content.replace(/\n/g, '<br>')}
+                            ${escapeHtml(content).replace(/\n/g, '<br>')}
                         </div>
                         <div class="message-meta small text-muted mt-1">
                             ${time}

@@ -17,13 +17,8 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'role',
         'phone',
         'avatar',
-        'pin',
-        'api_token',
-        'api_token_expires_at',
-        'is_employee',
         'notification_preferences',
     ];
 

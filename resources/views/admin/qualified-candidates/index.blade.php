@@ -759,7 +759,10 @@
         const notification = document.createElement('div');
         notification.className = `alert ${alertClass} position-fixed`;
         notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);';
-        notification.innerHTML = `<i class="bi bi-${icon} me-2"></i>${message}`;
+        const span = document.createElement('span');
+        span.textContent = message;
+        notification.innerHTML = `<i class="bi bi-${icon} me-2"></i>`;
+        notification.appendChild(span);
 
         document.body.appendChild(notification);
 

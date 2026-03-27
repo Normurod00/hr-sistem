@@ -87,7 +87,7 @@ return [
     |--------------------------------------------------------------------------
     */
     'mock' => [
-        'enabled' => env('INTEGRATIONS_MOCK_ENABLED', true),
+        'enabled' => env('INTEGRATIONS_MOCK_ENABLED', false),
         'delay_ms' => env('INTEGRATIONS_MOCK_DELAY', 100), // имитация задержки
     ],
 

@@ -21,46 +21,53 @@ class DatabaseSeeder extends Seeder
         // ============ USERS ============
 
         // Admin
-        $admin = User::create([
+        $admin = new User([
             'name' => 'Администратор',
             'email' => 'admin@brb.uz',
             'password' => Hash::make('password'),
-            'role' => UserRole::Admin,
             'phone' => '+998 71 123 45 67',
         ]);
+        $admin->role = UserRole::Admin;
+        $admin->is_employee = true;
+        $admin->save();
 
         // HR Manager
-        $hr = User::create([
+        $hr = new User([
             'name' => 'HR Менеджер',
             'email' => 'hr@brb.uz',
             'password' => Hash::make('password'),
-            'role' => UserRole::Hr,
             'phone' => '+998 71 234 56 78',
         ]);
+        $hr->role = UserRole::Hr;
+        $hr->is_employee = true;
+        $hr->save();
 
         // Candidates
-        $candidate1 = User::create([
+        $candidate1 = new User([
             'name' => 'Иванов Иван Петрович',
             'email' => 'ivanov@mail.uz',
             'password' => Hash::make('password'),
-            'role' => UserRole::Candidate,
             'phone' => '+998 90 111 22 33',
         ]);
+        $candidate1->role = UserRole::Candidate;
+        $candidate1->save();
 
-        $candidate2 = User::create([
+        $candidate2 = new User([
             'name' => 'Петрова Анна Сергеевна',
             'email' => 'petrova@mail.uz',
             'password' => Hash::make('password'),
-            'role' => UserRole::Candidate,
             'phone' => '+998 91 222 33 44',
         ]);
+        $candidate2->role = UserRole::Candidate;
+        $candidate2->save();
 
-        $candidate3 = User::create([
+        $candidate3 = new User([
             'name' => 'Сидоров Алексей Михайлович',
             'email' => 'sidorov@mail.uz',
             'password' => Hash::make('password'),
-            'role' => UserRole::Candidate,
         ]);
+        $candidate3->role = UserRole::Candidate;
+        $candidate3->save();
 
         // ============ VACANCIES ============
 

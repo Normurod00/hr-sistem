@@ -447,10 +447,16 @@
     <audio id="notificationSound" src="data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU..." preload="auto"></audio>
 
     <script>
-    const MEETING_ID = {{ $meeting->id }};
-    const USER_ID = {{ auth()->id() }};
-    const USER_NAME = '{{ auth()->user()->name }}';
-    const IS_HOST = {{ $meeting->isHost(auth()->user()) ? 'true' : 'false' }};
+    const MEETING_ID = @json($meeting->id);
+    const USER_ID = @json(auth()->id());
+    const USER_NAME = @json(auth()->user()->name);
+    const IS_HOST = @json($meeting->isHost(auth()->user()));
+
+    function escapeHtml(str) {
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    }
     const ICE_SERVERS = @json($iceServers);
     const CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]').content;
 
@@ -602,21 +608,27 @@
             card.id = 'waiting-' + userId;
             card.innerHTML = `
                 <div class="waiting-card-header">
-                    <div class="avatar">${userName.charAt(0).toUpperCase()}</div>
+                    <div class="avatar">${escapeHtml(userName.charAt(0).toUpperCase())}</div>
                     <div class="info">
-                        <h4>${userName}</h4>
+                        <h4>${escapeHtml(userName)}</h4>
                         <p>Хочет присоединиться</p>
                     </div>
                 </div>
                 <div class="waiting-card-actions">
-                    <button class="btn-accept" onclick="videoCall.acceptUser(${userId}, '${userName}')">
+                    <button class="btn-accept" data-user-id="${userId}" data-user-name="${escapeHtml(userName)}">
                         <i class="fa-solid fa-check me-1"></i> Принять
                     </button>
-                    <button class="btn-reject" onclick="videoCall.rejectUser(${userId})">
+                    <button class="btn-reject" data-user-id="${userId}">
                         <i class="fa-solid fa-xmark"></i>
                     </button>
                 </div>
             `;
+            card.querySelector('.btn-accept').addEventListener('click', function() {
+                videoCall.acceptUser(this.dataset.userId, this.dataset.userName);
+            });
+            card.querySelector('.btn-reject').addEventListener('click', function() {
+                videoCall.rejectUser(this.dataset.userId);
+            });
             container.appendChild(card);
 
             // Play notification sound
@@ -697,9 +709,9 @@
                 // Keep waiting requests
                 const html = participants.map(p => `
                     <div class="participant-card">
-                        <div class="avatar">${p.name.charAt(0).toUpperCase()}</div>
+                        <div class="avatar">${escapeHtml(p.name.charAt(0).toUpperCase())}</div>
                         <div class="info">
-                            <div class="name">${p.name}${p.id === USER_ID ? ' (Вы)' : ''}</div>
+                            <div class="name">${escapeHtml(p.name)}${p.id === USER_ID ? ' (Вы)' : ''}</div>
                             <div class="status ${p.status === 'joined' ? 'online' : ''}">${p.status === 'joined' ? 'В сети' : 'Приглашен'}</div>
                         </div>
                         <div class="icons">
@@ -835,7 +847,7 @@
 
             const el = document.createElement('div');
             el.className = 'notification ' + type;
-            el.innerHTML = `<i class="fa-solid fa-${type === 'success' ? 'check-circle' : type === 'warning' ? 'exclamation-circle' : 'times-circle'}"></i><span>${message}</span>`;
+            el.innerHTML = `<i class="fa-solid fa-${type === 'success' ? 'check-circle' : type === 'warning' ? 'exclamation-circle' : 'times-circle'}"></i><span>${escapeHtml(message)}</span>`;
             document.body.appendChild(el);
 
             setTimeout(() => el.remove(), 4000);

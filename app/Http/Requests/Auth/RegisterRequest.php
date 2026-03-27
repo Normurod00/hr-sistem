@@ -44,7 +44,6 @@ class RegisterRequest extends FormRequest
             'email' => $this->input('email'),
             'phone' => $this->input('phone'),
             'password' => $this->input('password'),
-            'role' => UserRole::Candidate, // По умолчанию регистрируются кандидаты
         ];
     }
 }

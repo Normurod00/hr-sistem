@@ -22,8 +22,8 @@ Route::prefix('auth')->middleware('throttle:5,1')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
 });
 
-// Защищённые маршруты (требуют api_token)
-Route::middleware('auth.api')->group(function () {
+// Защищённые маршруты (требуют api_token, rate limit: 60 запросов в минуту)
+Route::middleware(['auth.api', 'throttle:60,1'])->group(function () {
     // Текущий пользователь
     Route::get('/auth/me', [AuthController::class, 'me']);
 
@@ -50,7 +50,7 @@ Route::middleware('auth.api')->group(function () {
 Route::get('/ai/health', [AiGatewayController::class, 'health']);
 
 // Защищённые AI маршруты
-Route::middleware('auth:sanctum')->prefix('ai')->group(function () {
+Route::middleware(['auth:sanctum', 'throttle:30,1'])->prefix('ai')->group(function () {
     Route::post('/chat', [AiGatewayController::class, 'chat']);
     Route::post('/explain', [AiGatewayController::class, 'explain']);
     Route::post('/analyze', [AiGatewayController::class, 'analyze']);

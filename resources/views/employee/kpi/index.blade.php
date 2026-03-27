@@ -210,11 +210,17 @@
 
             const data = await response.json();
 
+            function escapeHtml(str) {
+                const div = document.createElement('div');
+                div.textContent = str;
+                return div.innerHTML;
+            }
+
             if (data.success) {
                 content.innerHTML = `
                     <div class="mb-4">
                         <h6 class="text-primary"><i class="bi bi-chat-left-text me-2"></i>Общее объяснение</h6>
-                        <p>${data.explanation || 'Нет объяснения'}</p>
+                        <p>${escapeHtml(data.explanation || 'Нет объяснения')}</p>
                     </div>
 
                     ${data.metric_explanations ? `
@@ -223,7 +229,7 @@
                             <ul class="list-group list-group-flush">
                                 ${Object.entries(data.metric_explanations).map(([key, val]) => `
                                     <li class="list-group-item px-0">
-                                        <strong>${key}:</strong> ${val}
+                                        <strong>${escapeHtml(key)}:</strong> ${escapeHtml(val)}
                                     </li>
                                 `).join('')}
                             </ul>
@@ -234,7 +240,7 @@
                         <div>
                             <h6 class="text-primary"><i class="bi bi-lightbulb me-2"></i>Рекомендации</h6>
                             <ul>
-                                ${data.improvement_suggestions.map(s => `<li>${s}</li>`).join('')}
+                                ${data.improvement_suggestions.map(s => `<li>${escapeHtml(s)}</li>`).join('')}
                             </ul>
                         </div>
                     ` : ''}
@@ -246,7 +252,7 @@
             content.innerHTML = `
                 <div class="alert alert-danger">
                     <i class="bi bi-exclamation-triangle me-2"></i>
-                    ${error.message}
+                    Ошибка загрузки данных
                 </div>
             `;
         }

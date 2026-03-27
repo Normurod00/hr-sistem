@@ -28,10 +28,11 @@ class CandidateController extends Controller
 
         // Поиск
         if ($search = $request->input('search')) {
-            $candidatesQuery->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%")
-                  ->orWhere('phone', 'like', "%{$search}%");
+            $escaped = str_replace(['%', '_'], ['\%', '\_'], $search);
+            $candidatesQuery->where(function ($q) use ($escaped) {
+                $q->where('name', 'like', "%{$escaped}%")
+                  ->orWhere('email', 'like', "%{$escaped}%")
+                  ->orWhere('phone', 'like', "%{$escaped}%");
             });
         }
 

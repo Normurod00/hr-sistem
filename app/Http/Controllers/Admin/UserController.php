@@ -82,14 +82,15 @@ class UserController extends Controller
         ]);
 
         $user = DB::transaction(function () use ($validated) {
-            $user = User::create([
+            $user = new User([
                 'name' => $validated['name'],
                 'email' => $validated['email'],
                 'phone' => $validated['phone'] ?? null,
                 'password' => Hash::make($validated['password']),
-                'role' => $validated['role'],
-                'is_employee' => in_array($validated['role'], ['employee', 'hr', 'admin']),
             ]);
+            $user->role = $validated['role'];
+            $user->is_employee = in_array($validated['role'], ['employee', 'hr', 'admin']);
+            $user->save();
 
             if (in_array($validated['role'], ['employee', 'hr', 'admin'])) {
                 $employeeRole = match ($validated['role']) {

@@ -29,7 +29,9 @@ class RegisterController extends Controller
         $userData = $request->getUserData();
         $userData['password'] = Hash::make($userData['password']);
 
-        $user = User::create($userData);
+        $user = new User($userData);
+        $user->role = \App\Enums\UserRole::Candidate;
+        $user->save();
 
         event(new Registered($user));
 

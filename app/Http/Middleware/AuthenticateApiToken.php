@@ -16,31 +16,29 @@ class AuthenticateApiToken
     {
         $token = $request->bearerToken();
 
+        $unauthorizedResponse = response()->json([
+            'success' => false,
+            'message' => 'Не авторизован.',
+        ], 401);
+
         if (!$token) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Токен не предоставлен.',
-            ], 401);
+            return $unauthorizedResponse;
         }
 
         // Ищем пользователя по хэшу токена
         $user = User::where('api_token', hash('sha256', $token))->first();
 
         if (!$user) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Неверный токен.',
-            ], 401);
+            return $unauthorizedResponse;
         }
 
         // Проверяем срок действия токена
         if ($user->api_token_expires_at && $user->api_token_expires_at->isPast()) {
-            $user->update(['api_token' => null, 'api_token_expires_at' => null]);
+            $user->api_token = null;
+            $user->api_token_expires_at = null;
+            $user->save();
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Токен истёк. Выполните повторную авторизацию.',
-            ], 401);
+            return $unauthorizedResponse;
         }
 
         // Устанавливаем пользователя в request

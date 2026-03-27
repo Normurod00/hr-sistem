@@ -258,21 +258,27 @@
 
             const data = await response.json();
 
+            function escapeHtml(str) {
+                const div = document.createElement('div');
+                div.textContent = str;
+                return div.innerHTML;
+            }
+
             if (data.success) {
                 content.innerHTML = `
                     <div class="mb-4">
                         <h6><i class="bi bi-chat-left-text me-2 text-primary"></i>Анализ</h6>
-                        <p>${data.explanation}</p>
+                        <p>${escapeHtml(data.explanation)}</p>
                     </div>
                     ${data.improvement_suggestions?.length ? `
                         <div>
                             <h6><i class="bi bi-lightbulb me-2 text-warning"></i>Советы</h6>
-                            <ul>${data.improvement_suggestions.map(s => `<li>${s}</li>`).join('')}</ul>
+                            <ul>${data.improvement_suggestions.map(s => `<li>${escapeHtml(s)}</li>`).join('')}</ul>
                         </div>
                     ` : ''}
                 `;
             } else {
-                content.innerHTML = `<div class="alert alert-danger">${data.error}</div>`;
+                content.innerHTML = `<div class="alert alert-danger">Ошибка загрузки</div>`;
             }
         } catch (e) {
             content.innerHTML = `<div class="alert alert-danger">Ошибка загрузки</div>`;

@@ -358,6 +358,12 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     scrollToBottom();
 
+    function escapeHtml(str) {
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    }
+
     // Add message to chat
     function addMessage(msg) {
         const div = document.createElement('div');
@@ -366,10 +372,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
         let html = '';
         if (msg.sender_type !== 'system' && !msg.is_mine) {
-            html += `<div class="message-sender">${msg.sender_name} (HR)</div>`;
+            html += `<div class="message-sender">${escapeHtml(msg.sender_name)} (HR)</div>`;
         }
-        html += `<div class="message-bubble">${msg.message}</div>`;
-        html += `<div class="message-meta">${msg.formatted_time}</div>`;
+        html += `<div class="message-bubble">${escapeHtml(msg.message)}</div>`;
+        html += `<div class="message-meta">${escapeHtml(msg.formatted_time)}</div>`;
 
         div.innerHTML = html;
         chatMessages.appendChild(div);

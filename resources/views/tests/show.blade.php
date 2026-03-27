@@ -512,15 +512,15 @@
 </div>
 
 <script>
-    const applicationId = {{ $application->id }};
-    const csrfToken = '{{ csrf_token() }}';
+    const applicationId = @json($application->id);
+    const csrfToken = @json(csrf_token());
 
     let questions = [];
     let currentQuestionIndex = 0;
     let answers = {};
-    let remainingTime = {{ $test->remaining_time }};
+    let remainingTime = @json($test->remaining_time);
     let timerInterval = null;
-    let testStarted = {{ $test->status === 'in_progress' ? 'true' : 'false' }};
+    let testStarted = @json($test->status === 'in_progress');
 
     // If test already started, resume
     if (testStarted) {
@@ -627,10 +627,13 @@
             const optionDiv = document.createElement('div');
             optionDiv.className = 'option-item' + (answers[index] === optIndex ? ' selected' : '');
             optionDiv.onclick = () => selectOption(index, optIndex);
-            optionDiv.innerHTML = `
-                <div class="option-radio"></div>
-                <div class="option-text">${opt}</div>
-            `;
+            const radioDiv = document.createElement('div');
+            radioDiv.className = 'option-radio';
+            const textDiv = document.createElement('div');
+            textDiv.className = 'option-text';
+            textDiv.textContent = opt;
+            optionDiv.appendChild(radioDiv);
+            optionDiv.appendChild(textDiv);
             optionsList.appendChild(optionDiv);
         });
 
