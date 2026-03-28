@@ -8,9 +8,9 @@ server:
   cors_origins:
     - "http://localhost"
     - "http://127.0.0.1"
-    - "http://hr-brb"
-    - "https://hr-brb.local"
+    - "http://204.168.217.54"
     - "http://app"
+    - "http://hr-app"
 
 # LLM Configuration
 llm:

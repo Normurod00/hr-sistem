@@ -1,4 +1,4 @@
-version: "3.8"
+version: "3.9"
 
 services:
   # ── Laravel PHP-FPM ──
@@ -6,13 +6,13 @@ services:
     build:
       context: .
       dockerfile: docker/php/Dockerfile
+    container_name: hr-app
+    working_dir: /opt/hr-servis
     restart: unless-stopped
-    expose:
-      - "9000"
+    ports:
+      - "127.0.0.1:9000:9000"
     volumes:
-      - ./storage:/var/www/html/storage
-      - ./.env:/var/www/html/.env
-      - app-public:/var/www/html/public
+      - ./:/opt/hr-servis
     depends_on:
       db:
         condition: service_healthy
@@ -21,6 +21,7 @@ services:
     environment:
       - DB_HOST=db
       - REDIS_HOST=redis
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
       - HR_AI_URL=http://ai:8095
     networks:
       - hr-net
@@ -30,16 +31,18 @@ services:
     build:
       context: .
       dockerfile: docker/php/Dockerfile
+    container_name: hr-worker
+    working_dir: /opt/hr-servis
     restart: unless-stopped
     command: supervisord -c /etc/supervisor/conf.d/supervisord.conf -n
     volumes:
-      - ./storage:/var/www/html/storage
-      - ./.env:/var/www/html/.env
+      - ./:/opt/hr-servis
     depends_on:
       - app
     environment:
       - DB_HOST=db
       - REDIS_HOST=redis
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
       - HR_AI_URL=http://ai:8095
     networks:
       - hr-net
@@ -49,9 +52,10 @@ services:
     build:
       context: .
       dockerfile: docker/ai/Dockerfile
+    container_name: hr-ai
     restart: unless-stopped
-    expose:
-      - "8095"
+    ports:
+      - "127.0.0.1:8095:8095"
     volumes:
       - ./ai_server/config.yaml:/app/config.yaml
     environment:
@@ -67,15 +71,14 @@ services:
   # ── PostgreSQL ──
   db:
     image: postgres:16-alpine
+    container_name: hr-db
     restart: unless-stopped
-    expose:
-      - "5432"
     environment:
       POSTGRES_DB: ${DB_DATABASE:-hr_brb}
       POSTGRES_USER: ${DB_USERNAME:-postgres}
       POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD must be set}
     volumes:
-      - db-data:/var/lib/postgresql/data
+      - pgdata:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-postgres}"]
       interval: 5s
@@ -87,14 +90,13 @@ services:
   # ── Redis ──
   redis:
     image: redis:7-alpine
+    container_name: hr-redis
     restart: unless-stopped
-    command: redis-server --requirepass ${REDIS_PASSWORD:?REDIS_PASSWORD must be set}
-    expose:
-      - "6379"
+    command: redis-server --requirepass ${REDIS_PASSWORD:?REDIS_PASSWORD must be set} --appendonly yes
     volumes:
-      - redis-data:/data
+      - redisdata:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -102,9 +104,8 @@ services:
       - hr-net
 
 volumes:
-  db-data:
-  redis-data:
-  app-public:
+  pgdata:
+  redisdata:
 
 networks:
   hr-net:

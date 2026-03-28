@@ -5,6 +5,12 @@ RUN apk add --no-cache \
     git curl zip unzip libzip-dev libpng-dev libjpeg-turbo-dev freetype-dev \
     icu-dev oniguruma-dev postgresql-dev supervisor
 
+# Redis extension
+RUN apk add --no-cache --virtual .redis-deps autoconf gcc g++ make \
+    && pecl install redis \
+    && docker-php-ext-enable redis \
+    && apk del .redis-deps
+
 # PHP extensions
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install \
@@ -26,27 +32,10 @@ RUN echo "upload_max_filesize=20M" >> /usr/local/etc/php/conf.d/uploads.ini \
 # Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-WORKDIR /var/www/html
-
-# Copy composer files first for layer caching
-COPY composer.json composer.lock ./
-RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist
-
-# Copy application
-COPY . .
-
-# Generate autoloader & run post-install scripts
-RUN composer dump-autoload --optimize \
-    && php artisan package:discover --ansi
-
-# Permissions
-RUN chown -R www-data:www-data storage bootstrap/cache \
-    && chmod -R 775 storage bootstrap/cache
-
 # Supervisor config for queue worker
 COPY docker/php/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
-USER www-data
+WORKDIR /opt/hr-servis
 
 EXPOSE 9000
 CMD ["php-fpm"]

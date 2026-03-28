@@ -27,7 +27,6 @@ class RegisterController extends Controller
     public function register(RegisterRequest $request): RedirectResponse
     {
         $userData = $request->getUserData();
-        $userData['password'] = Hash::make($userData['password']);
 
         $user = new User($userData);
         $user->role = \App\Enums\UserRole::Candidate;
