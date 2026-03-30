@@ -252,8 +252,8 @@ textarea.form-control {
     top: 100%;
     left: 0;
     right: 0;
-    background: var(--panel);
-    border: 2px solid var(--br);
+    background: var(--panel, #ffffff);
+    border: 2px solid var(--br, #e9edf5);
     border-top: none;
     border-radius: 0 0 12px 12px;
     padding: 14px;
@@ -271,12 +271,14 @@ textarea.form-control {
 .skills-dropdown__group-title {
     font-size: 11px;
     font-weight: 700;
-    color: var(--fg-3);
+    color: var(--fg-3, #7c87a5);
     text-transform: uppercase;
     letter-spacing: 0.5px;
     margin: 12px 0 8px 0;
     padding-bottom: 4px;
-    border-bottom: 1px solid var(--br);
+    border-bottom: 1px solid var(--br, #e9edf5);
+    width: 100%;
+    flex-basis: 100%;
 }
 
 .skills-dropdown__group-title:first-child {
@@ -310,12 +312,12 @@ textarea.form-control {
     display: inline-flex;
     align-items: center;
     padding: 6px 14px;
-    background: var(--grid);
-    border: 1px solid var(--br);
+    background: var(--grid, #eef1f7);
+    border: 1px solid var(--br, #e9edf5);
     border-radius: 8px;
     font-size: 13px;
     font-weight: 500;
-    color: var(--fg-2);
+    color: var(--fg-2, #2d3754);
     cursor: pointer;
     transition: all 0.15s ease;
 }
