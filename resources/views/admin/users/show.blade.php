@@ -8,10 +8,18 @@
     <div class="col-lg-4">
         <div class="card mb-4">
             <div class="card-body text-center">
-                <img src="{{ $user->avatar_url }}" class="rounded-circle mb-3" width="120" height="120">
+                <img src="{{ $user->avatar_url }}" alt="{{ $user->name }}" class="rounded-circle mb-3" width="120" height="120">
                 <h4>{{ $user->name }}</h4>
                 <p class="text-muted">{{ $user->email }}</p>
-                <span class="badge bg-{{ $user->role->value === 'admin' ? 'danger' : ($user->role->value === 'hr' ? 'success' : 'primary') }} fs-6">
+                @php
+                    $showRoleColors = [
+                        'employee' => 'bg-info',
+                        'candidate' => 'bg-primary',
+                        'hr' => 'bg-success',
+                        'admin' => 'bg-danger',
+                    ];
+                @endphp
+                <span class="badge {{ $showRoleColors[$user->role->value] ?? 'bg-secondary' }} fs-6">
                     {{ $user->role->label() }}
                 </span>
             </div>
@@ -117,13 +125,59 @@
                 </div>
             </div>
         @else
-            <div class="card">
-                <div class="card-body text-center py-5">
-                    <i class="bi bi-person-badge text-muted" style="font-size: 3rem;"></i>
-                    <h5 class="mt-3">{{ $user->role->label() }}</h5>
-                    <p class="text-muted">Этот пользователь является сотрудником системы.</p>
+            @if($user->employeeProfile)
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <i class="bi bi-person-badge me-2"></i>Профиль сотрудника
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-sm-6 mb-3">
+                                <small class="text-muted d-block">Табельный номер</small>
+                                <strong>{{ $user->employeeProfile->employee_number }}</strong>
+                            </div>
+                            <div class="col-sm-6 mb-3">
+                                <small class="text-muted d-block">Статус</small>
+                                <span class="badge bg-{{ $user->employeeProfile->status->color() }}">
+                                    {{ $user->employeeProfile->status->label() }}
+                                </span>
+                            </div>
+                            <div class="col-sm-6 mb-3">
+                                <small class="text-muted d-block">Отдел</small>
+                                <strong>{{ $user->employeeProfile->department ?? '—' }}</strong>
+                            </div>
+                            <div class="col-sm-6 mb-3">
+                                <small class="text-muted d-block">Должность</small>
+                                <strong>{{ $user->employeeProfile->position ?? '—' }}</strong>
+                            </div>
+                            <div class="col-sm-6 mb-3">
+                                <small class="text-muted d-block">Роль сотрудника</small>
+                                <strong>{{ $user->employeeProfile->role?->label() ?? '—' }}</strong>
+                            </div>
+                            @if($user->employeeProfile->manager)
+                                <div class="col-sm-6 mb-3">
+                                    <small class="text-muted d-block">Руководитель</small>
+                                    <strong>{{ $user->employeeProfile->manager->user?->name ?? '—' }}</strong>
+                                </div>
+                            @endif
+                            @if($user->employeeProfile->hire_date)
+                                <div class="col-sm-6 mb-3">
+                                    <small class="text-muted d-block">Дата найма</small>
+                                    <strong>{{ $user->employeeProfile->hire_date->format('d.m.Y') }}</strong>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
                 </div>
-            </div>
+            @else
+                <div class="card">
+                    <div class="card-body text-center py-5">
+                        <i class="bi bi-person-badge text-muted" style="font-size: 3rem;"></i>
+                        <h5 class="mt-3">{{ $user->role->label() }}</h5>
+                        <p class="text-muted">Профиль сотрудника ещё не создан.</p>
+                    </div>
+                </div>
+            @endif
         @endif
     </div>
 </div>

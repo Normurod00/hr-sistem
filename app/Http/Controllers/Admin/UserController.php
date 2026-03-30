@@ -123,7 +123,7 @@ class UserController extends Controller
      */
     public function show(User $user): View
     {
-        $user->load(['applications.vacancy', 'candidateProfile']);
+        $user->load(['applications.vacancy', 'candidateProfile', 'employeeProfile.manager.user']);
 
         return view('admin.users.show', compact('user'));
     }

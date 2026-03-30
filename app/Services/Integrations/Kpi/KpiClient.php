@@ -231,6 +231,8 @@ class KpiClient
                 'score' => 0,
                 'level' => 'unknown',
                 'message' => 'Недостаточно данных для анализа',
+                'current_kpi' => 0,
+                'delta' => 0,
             ];
         }
 

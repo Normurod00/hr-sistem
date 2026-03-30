@@ -34,15 +34,15 @@
                     <th>Роль</th>
                     <th>Отдел / Должность</th>
                     <th>Регистрация</th>
-                    <th></th>
+                    <th width="50"></th>
                 </tr>
             </thead>
             <tbody>
                 @forelse($users as $user)
-                    <tr>
+                    <tr class="align-middle">
                         <td>
                             <div class="d-flex align-items-center">
-                                <img src="{{ $user->avatar_url }}" class="rounded-circle me-2" width="40" height="40">
+                                <img src="{{ $user->avatar_url }}" alt="{{ $user->name }}" class="rounded-circle me-2" width="40" height="40">
                                 <div>
                                     <div class="fw-semibold">{{ $user->name }}</div>
                                     @if($user->phone)
@@ -68,7 +68,7 @@
                         <td>
                             @if($user->employeeProfile)
                                 <div>{{ $user->employeeProfile->department ?? '—' }}</div>
-                                <small class="text-muted">{{ $user->employeeProfile->position ?? '' }}</small>
+                                <small class="text-muted">{{ $user->employeeProfile->position ?? '—' }}</small>
                             @else
                                 <span class="text-muted">—</span>
                             @endif
@@ -76,7 +76,7 @@
                         <td><small class="text-muted">{{ $user->created_at->format('d.m.Y') }}</small></td>
                         <td>
                             <div class="dropdown">
-                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
                                     <i class="bi bi-three-dots"></i>
                                 </button>
                                 <ul class="dropdown-menu dropdown-menu-end">

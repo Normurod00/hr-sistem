@@ -24,7 +24,7 @@
                     <div class="stat-value">{{ number_format($dashboard['current']['total_score'] ?? 0, 1) }}%</div>
                 </div>
             </div>
-            @if(isset($dashboard['risk']))
+            @if(isset($dashboard['risk']['delta']))
                 <div class="stat-trend {{ $dashboard['risk']['delta'] >= 0 ? 'up' : 'down' }}">
                     <i class="bi bi-arrow-{{ $dashboard['risk']['delta'] >= 0 ? 'up' : 'down' }}"></i>
                     {{ abs($dashboard['risk']['delta']) }}% vs прошлый месяц
