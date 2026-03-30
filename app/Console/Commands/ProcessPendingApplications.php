@@ -17,13 +17,13 @@ class ProcessPendingApplications extends Command
                             {--batch : Использовать batch обработку (быстрее)}
                             {--force : Переобработать все заявки, даже уже обработанные}
                             {--limit=100 : Максимум заявок для обработки}
-                            {--quiet : Тихий режим без вывода}';
+                            ';
 
     protected $description = 'Обработать все ожидающие заявки кандидатов через AI';
 
     public function handle(AiClient $aiClient): int
     {
-        $quiet = $this->option('quiet');
+        $quiet = $this->output->isQuiet();
 
         // Проверяем доступность AI-сервера
         $health = $aiClient->healthCheck();
