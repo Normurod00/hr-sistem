@@ -50,7 +50,6 @@
     border: 1px solid var(--br);
     border-radius: 16px;
     margin-bottom: 24px;
-    overflow: hidden;
 }
 
 .form-section__header {
@@ -256,7 +255,7 @@ textarea.form-control {
     z-index: 100;
     display: none;
     box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
-    max-height: 360px;
+    max-height: 440px;
     overflow-y: auto;
 }
 
