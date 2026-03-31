@@ -1,8 +1,8 @@
 """
-Employee AI Module - Обработка запросов сотрудников
+Employee AI Module - Conversational HR Assistant
 
 Модуль обеспечивает:
-- Обработку чата с сотрудниками
+- Естественный разговор с сотрудниками (RU/UZ)
 - Объяснение KPI
 - Генерацию рекомендаций
 - Поиск по политикам
@@ -17,22 +17,52 @@ from enum import Enum
 logger = logging.getLogger(__name__)
 
 
+# ============== Language Detection ==============
+
+def detect_language(text: str) -> str:
+    """Detect user language: 'ru' or 'uz'"""
+    lower = text.lower()
+
+    # Uzbek-specific Cyrillic: ў, қ, ғ, ҳ
+    if any(c in lower for c in "ўқғҳ"):
+        return "uz"
+
+    # Common Uzbek Cyrillic words
+    if re.search(
+        r"\b(салом|ассалому|раҳмат|ёрдам|қандай|менинг|нима|керак|бўлим|таътил|мукофот)\b",
+        lower,
+    ):
+        return "uz"
+
+    # Uzbek Latin keywords
+    if re.search(
+        r"\b(salom|rahmat|yordam|qanday|kerak|nima|menin)\b",
+        lower,
+    ):
+        return "uz"
+
+    return "ru"
+
+
+# ============== Intents ==============
+
 class EmployeeIntent(str, Enum):
-    """Интенты сообщений сотрудников"""
-    LEAVE_REQUEST = "leave_request"
-    LEAVE_BALANCE = "leave_balance"
-    KPI_QUESTION = "kpi_question"
+    GREETING = "greeting"
+    SMALLTALK = "smalltalk"
+    CAPABILITIES = "capabilities"
+    KPI_SCORE = "kpi_score"
     KPI_EXPLAIN = "kpi_explain"
+    KPI_IMPROVE = "kpi_improve"
     BONUS_INQUIRY = "bonus_inquiry"
     SALARY_QUESTION = "salary_question"
-    POLICY_SEARCH = "policy_search"
+    LEAVE_BALANCE = "leave_balance"
+    LEAVE_REQUEST = "leave_request"
     DISCIPLINE_QUESTION = "discipline_question"
     RECOGNITION_QUESTION = "recognition_question"
     TRAINING_QUESTION = "training_question"
     SCHEDULE_QUESTION = "schedule_question"
     BENEFITS_QUESTION = "benefits_question"
-    GREETING = "greeting"
-    HELP = "help"
+    POLICY_SEARCH = "policy_search"
     GENERAL = "general"
 
 
@@ -43,127 +73,157 @@ class IntentPattern:
     priority: int = 0
 
 
-# Паттерны для определения интентов (русский + узбекский языки)
 INTENT_PATTERNS = [
-    # === Приветствия ===
+    # === Greeting ===
     IntentPattern(
         intent=EmployeeIntent.GREETING,
         patterns=[
-            r"^привет", r"^здравствуй", r"^добр.*утр", r"^добр.*день", r"^добр.*вечер",
-            r"^салом", r"^ассалому", r"^хайр", r"^hello", r"^hi$",
+            r"^привет", r"^здравствуй", r"^добр\w*\s*(утр|день|вечер)",
+            r"^салом", r"^ассалому", r"^хайр", r"^hello", r"^hi\b",
         ],
-        priority=15,
+        priority=20,
     ),
+    # === Smalltalk ===
     IntentPattern(
-        intent=EmployeeIntent.HELP,
+        intent=EmployeeIntent.SMALLTALK,
         patterns=[
-            r"^помощь", r"^помоги", r"что.*умеешь", r"что.*можешь", r"как.*работ",
-            r"ёрдам", r"yordam", r"нима қила олас", r"help",
+            r"как\s+(ты|у тебя|дела|сам)", r"как\s+жизнь", r"как\s+настроен",
+            r"что\s+нового", r"чё\s+как",
+            r"қандайсиз", r"яхшимисиз", r"ишлар\s+қандай",
+        ],
+        priority=18,
+    ),
+    # === Capabilities ===
+    IntentPattern(
+        intent=EmployeeIntent.CAPABILITIES,
+        patterns=[
+            r"что.*(умеешь|можешь|знаешь)", r"^помощь$", r"^помоги$",
+            r"чем.*помо[гж]", r"возможности", r"функци",
+            r"нима\s+қила\s+олас", r"^ёрдам$", r"^yordam$", r"^help\b",
+        ],
+        priority=17,
+    ),
+    # === KPI improve (before explain & score) ===
+    IntentPattern(
+        intent=EmployeeIntent.KPI_IMPROVE,
+        patterns=[
+            r"как.*(увеличить|улучшить|повысить|поднять).*(kpi|кпи|показател|эффективн|качеств|результат)",
+            r"(увеличить|улучшить|повысить|поднять).*(kpi|кпи|показател|качеств|результат)",
+            r"что\s+делать.*(kpi|кпи|показател)", r"план.*улучшен",
+            r"как.*(улучшить|повысить)\s+(качеств|выполнен|посещаем|продаж)",
+            r"kpi.*яхшилаш", r"қандай.*яхшилаш", r"кўтариш.*(kpi|кпи)",
         ],
         priority=15,
     ),
-    # === Отпуска ===
+    # === KPI explain ===
+    IntentPattern(
+        intent=EmployeeIntent.KPI_EXPLAIN,
+        patterns=[
+            r"почему.*(kpi|кпи|показател).*(низк|ниже|упал|снизил|плох|хуже)",
+            r"почему.*(низк|ниже|упал|снизил).*(kpi|кпи|показател)",
+            r"объясни.*(kpi|кпи)", r"разъясни.*(kpi|кпи)",
+            r"из.за\s+чего.*(kpi|кпи)", r"причин.*(kpi|кпи|сниж|паден)",
+            r"нега.*(kpi|кпи).*паст", r"тушунтир.*(kpi|кпи)",
+        ],
+        priority=13,
+    ),
+    # === KPI score (catch-all for KPI mentions) ===
+    IntentPattern(
+        intent=EmployeeIntent.KPI_SCORE,
+        patterns=[
+            r"(сколько|какой|каков).*(kpi|кпи)", r"мой\s+(kpi|кпи)",
+            r"текущ.*(kpi|кпи)", r"\bkpi\b", r"\bкпи\b",
+            r"показател.*эффективн", r"результат.*работ",
+            r"менинг.*(kpi|натижа)", r"самарадорлик",
+        ],
+        priority=5,
+    ),
+    # === Leave ===
     IntentPattern(
         intent=EmployeeIntent.LEAVE_BALANCE,
         patterns=[
-            r"сколько.*дней.*отпуск", r"остаток.*отпуск", r"дней отпуска.*осталось",
-            r"сколько.*отгул", r"неча кун.*таътил", r"таътил.*қолди",
+            r"сколько.*дней.*отпуск", r"остаток.*отпуск", r"дней\s+отпуска.*осталось",
+            r"отпуск.*сколько.*остал", r"сколько.*остал.*отпуск",
+            r"сколько.*отгул", r"неча\s+кун.*таътил", r"таътил.*қолди",
         ],
-        priority=10,
+        priority=12,
     ),
     IntentPattern(
         intent=EmployeeIntent.LEAVE_REQUEST,
         patterns=[
-            r"как.*оформить.*отпуск", r"хочу.*отпуск", r"заявление на отпуск",
-            r"больничн", r"отсутств", r"выходн", r"таътил.*олмоқ", r"таътил.*расмий",
+            r"как.*оформить.*отпуск", r"хочу.*отпуск", r"заявление.*отпуск",
+            r"отпуск", r"больничн", r"отсутств", r"выходн",
+            r"таътил.*олмоқ", r"таътил.*расмий", r"таътил",
         ],
-        priority=5,
+        priority=8,
     ),
-    # === KPI ===
-    IntentPattern(
-        intent=EmployeeIntent.KPI_EXPLAIN,
-        patterns=[
-            r"почему.*kpi.*низк", r"почему.*кпи.*низк", r"почему.*показател.*упал",
-            r"объясни.*kpi", r"разъясни.*kpi", r"почему.*снизил",
-            r"нега.*kpi.*паст", r"тушунтир.*kpi",
-        ],
-        priority=10,
-    ),
-    IntentPattern(
-        intent=EmployeeIntent.KPI_QUESTION,
-        patterns=[
-            r"kpi", r"кпи", r"показател.*эффективн", r"результат.*работ", r"мой.*рейтинг",
-            r"менинг.*натижа", r"самарадорлик",
-        ],
-        priority=3,
-    ),
-    # === Финансы ===
+    # === Finance ===
     IntentPattern(
         intent=EmployeeIntent.BONUS_INQUIRY,
         patterns=[
-            r"бонус", r"премия", r"премии", r"когда.*выплат", r"размер.*премии",
-            r"мукофот", r"bonus",
+            r"бонус", r"премия", r"премии", r"когда.*выплат",
+            r"размер.*преми", r"мукофот", r"bonus",
         ],
-        priority=5,
+        priority=8,
     ),
     IntentPattern(
         intent=EmployeeIntent.SALARY_QUESTION,
         patterns=[
-            r"зарплат", r"оклад", r"выплат", r"маош", r"ойлик", r"salary",
+            r"зарплат", r"оклад", r"маош", r"ойлик", r"salary",
             r"когда.*получ", r"қачон.*олам",
         ],
-        priority=5,
+        priority=7,
     ),
-    # === Дисциплина ===
+    # === Discipline ===
     IntentPattern(
         intent=EmployeeIntent.DISCIPLINE_QUESTION,
         patterns=[
             r"дисциплин", r"выговор", r"взыскан", r"штраф", r"нарушен",
-            r"интизом", r"жарима", r"огоҳлантириш", r"ҳайфсан",
+            r"интизом", r"жарима", r"огоҳлантириш",
         ],
         priority=8,
     ),
-    # === Признание ===
+    # === Recognition ===
     IntentPattern(
         intent=EmployeeIntent.RECOGNITION_QUESTION,
         patterns=[
             r"признан", r"награ", r"достижен", r"благодарн", r"поощрен",
-            r"эътироф", r"мукофот", r"ютуқ", r"миннатдорлик",
+            r"эътироф", r"ютуқ", r"миннатдорлик",
         ],
         priority=7,
     ),
-    # === Обучение ===
+    # === Training ===
     IntentPattern(
         intent=EmployeeIntent.TRAINING_QUESTION,
         patterns=[
             r"обучен", r"курс", r"тренинг", r"сертификат", r"экзамен",
-            r"ўқиш", r"курс", r"тренинг", r"сертификат",
+            r"ўқиш", r"ўқув",
         ],
         priority=6,
     ),
-    # === График работы ===
+    # === Schedule ===
     IntentPattern(
         intent=EmployeeIntent.SCHEDULE_QUESTION,
         patterns=[
             r"график.*работ", r"расписан", r"смен", r"рабоч.*врем",
-            r"иш.*вақт", r"жадвал", r"schedule",
+            r"иш.*вақт", r"жадвал",
         ],
         priority=6,
     ),
-    # === Льготы ===
+    # === Benefits ===
     IntentPattern(
         intent=EmployeeIntent.BENEFITS_QUESTION,
         patterns=[
             r"льгот", r"соцпакет", r"медицин.*страхов", r"дмс", r"корпоратив",
-            r"имтиёз", r"тиббий суғурта",
+            r"имтиёз", r"тиббий\s+суғурта",
         ],
         priority=6,
     ),
-    # === Политики ===
+    # === Policy ===
     IntentPattern(
         intent=EmployeeIntent.POLICY_SEARCH,
         patterns=[
-            r"политик", r"регламент", r"правил.*банк", r"порядок.*оформлен",
+            r"политик", r"регламент", r"правил", r"порядок.*оформлен",
             r"процедур", r"документ.*нужн", r"сиёсат", r"қоида",
         ],
         priority=5,
@@ -172,11 +232,10 @@ INTENT_PATTERNS = [
 
 
 class EmployeeIntentDetector:
-    """Детектор интентов для сообщений сотрудников"""
+    """Детектор интентов с приоритетами"""
 
     def detect(self, message: str) -> EmployeeIntent:
-        """Определить интент сообщения"""
-        message_lower = message.lower()
+        message_lower = message.lower().strip()
 
         best_intent = EmployeeIntent.GENERAL
         best_priority = -1
@@ -187,16 +246,17 @@ class EmployeeIntentDetector:
                     if pattern_config.priority > best_priority:
                         best_intent = pattern_config.intent
                         best_priority = pattern_config.priority
-                        break
+                    break
 
-        logger.debug(f"Detected intent: {best_intent} for message: {message[:50]}...")
+        logger.debug(f"Detected intent: {best_intent.value} for: {message[:50]}...")
         return best_intent
 
+
+# ============== KPI Explainer (used by /ai/explain endpoint) ==============
 
 class EmployeeKpiExplainer:
     """Объяснение KPI показателей"""
 
-    # Шаблоны объяснений для низких показателей
     LOW_METRIC_EXPLANATIONS = {
         "sales": [
             "Показатель продаж ниже плана. Возможные причины: сезонность, изменение рынка, недостаток клиентской базы.",
@@ -225,183 +285,131 @@ class EmployeeKpiExplainer:
     }
 
     def explain_kpi(self, kpi_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Сгенерировать объяснение KPI"""
         total_score = kpi_data.get("total_score", 0)
+        if isinstance(total_score, str):
+            total_score = float(total_score)
         metrics = kpi_data.get("metrics", {})
         low_metrics = kpi_data.get("low_metrics", {})
 
-        # Общее объяснение
         if total_score >= 90:
-            general_explanation = (
+            explanation = (
                 "Ваши показатели KPI отличные! Вы превышаете план по большинству метрик. "
                 "Продолжайте в том же духе и делитесь опытом с коллегами."
             )
         elif total_score >= 70:
-            general_explanation = (
+            explanation = (
                 "Ваши показатели KPI хорошие, но есть возможности для улучшения. "
-                "Обратите внимание на метрики, которые ниже плана."
+                "Обратите внимание на метрики ниже плана."
             )
         elif total_score >= 50:
-            general_explanation = (
+            explanation = (
                 "Ваши показатели KPI требуют внимания. "
                 "Рекомендуется обсудить с руководителем план улучшения."
             )
         else:
-            general_explanation = (
+            explanation = (
                 "Ваши показатели KPI критически низкие и требуют срочных мер. "
                 "Необходимо составить план действий совместно с руководителем."
             )
 
-        # Объяснения по метрикам
         metric_explanations = {}
         for metric_key, metric_data in low_metrics.items():
             completion = metric_data.get("completion", 0)
+            if isinstance(completion, str):
+                completion = float(completion)
             if completion < 70:
                 explanations = self.LOW_METRIC_EXPLANATIONS.get(metric_key, [
                     f"Показатель '{metric_data.get('name', metric_key)}' ниже плана ({completion:.1f}%).",
                 ])
                 metric_explanations[metric_data.get("name", metric_key)] = " ".join(explanations)
 
-        # Рекомендации по улучшению
-        improvement_suggestions = self._generate_improvement_suggestions(low_metrics, total_score)
+        suggestions = self._generate_improvement_suggestions(low_metrics, total_score)
 
         return {
-            "explanation": general_explanation,
+            "explanation": explanation,
             "metric_explanations": metric_explanations,
-            "improvement_suggestions": improvement_suggestions,
+            "improvement_suggestions": suggestions,
             "risk_assessment": self._assess_risk(total_score, low_metrics),
         }
 
-    def _generate_improvement_suggestions(
-        self, low_metrics: Dict, total_score: float
-    ) -> List[str]:
-        """Сгенерировать рекомендации по улучшению"""
+    def _generate_improvement_suggestions(self, low_metrics: Dict, total_score: float) -> List[str]:
         suggestions = []
-
         if total_score < 50:
             suggestions.append("Срочно назначьте встречу с руководителем для обсуждения плана улучшения")
-
         for metric_key, metric_data in low_metrics.items():
             completion = metric_data.get("completion", 0)
+            if isinstance(completion, str):
+                completion = float(completion)
             if completion < 50:
                 suggestions.append(f"Приоритетно улучшить показатель '{metric_data.get('name', metric_key)}'")
             elif completion < 70:
                 suggestions.append(f"Обратить внимание на показатель '{metric_data.get('name', metric_key)}'")
-
         if not suggestions:
             suggestions.append("Поддерживайте текущий уровень показателей")
-            suggestions.append("Рассмотрите возможность помощи коллегам с низкими показателями")
-
-        return suggestions[:5]  # Максимум 5 рекомендаций
+        return suggestions[:5]
 
     def _assess_risk(self, total_score: float, low_metrics: Dict) -> Dict[str, Any]:
-        """Оценить риски"""
-        critical_metrics = sum(1 for m in low_metrics.values() if m.get("completion", 0) < 30)
+        critical = sum(
+            1 for m in low_metrics.values()
+            if (float(m.get("completion", 0)) if isinstance(m.get("completion", 0), str) else m.get("completion", 0)) < 30
+        )
+        if total_score < 50 or critical >= 2:
+            return {"level": "high", "message": "Высокий риск: требуются срочные меры", "critical_metrics_count": critical}
+        elif total_score < 70 or critical >= 1:
+            return {"level": "medium", "message": "Средний риск: рекомендуется план улучшения", "critical_metrics_count": critical}
+        return {"level": "low", "message": "Низкий риск: показатели в пределах нормы", "critical_metrics_count": critical}
 
-        if total_score < 50 or critical_metrics >= 2:
-            level = "high"
-            message = "Высокий риск: требуются срочные меры"
-        elif total_score < 70 or critical_metrics >= 1:
-            level = "medium"
-            message = "Средний риск: рекомендуется план улучшения"
-        else:
-            level = "low"
-            message = "Низкий риск: показатели в пределах нормы"
 
-        return {
-            "level": level,
-            "message": message,
-            "critical_metrics_count": critical_metrics,
-        }
-
+# ============== Recommendation Engine (used by /ai/analyze endpoint) ==============
 
 class EmployeeRecommendationEngine:
-    """Генератор рекомендаций для улучшения KPI"""
-
-    # База рекомендаций по типам метрик
     RECOMMENDATION_BASE = {
         "sales": [
-            {
-                "type": "quick",
-                "action": "Проведите follow-up звонки клиентам, которые проявляли интерес",
-                "effect": "Быстрое увеличение конверсии",
-                "impact": 3.0,
-            },
-            {
-                "type": "medium",
-                "action": "Пройдите тренинг по продажам и техникам закрытия сделок",
-                "effect": "Улучшение навыков продаж",
-                "impact": 5.0,
-            },
-            {
-                "type": "long",
-                "action": "Развивайте личный бренд и сеть контактов в отрасли",
-                "effect": "Долгосрочный рост клиентской базы",
-                "impact": 10.0,
-            },
+            {"type": "quick", "action": "Проведите follow-up звонки клиентам, которые проявляли интерес", "effect": "Быстрое увеличение конверсии", "impact": 3.0},
+            {"type": "medium", "action": "Пройдите тренинг по продажам и техникам закрытия сделок", "effect": "Улучшение навыков продаж", "impact": 5.0},
+            {"type": "long", "action": "Развивайте личный бренд и сеть контактов в отрасли", "effect": "Долгосрочный рост клиентской базы", "impact": 10.0},
         ],
         "customer_satisfaction": [
-            {
-                "type": "quick",
-                "action": "Увеличьте скорость ответа на запросы клиентов до 2 часов",
-                "effect": "Повышение удовлетворённости",
-                "impact": 2.5,
-            },
-            {
-                "type": "medium",
-                "action": "Внедрите практику регулярной обратной связи с клиентами",
-                "effect": "Улучшение качества сервиса",
-                "impact": 4.0,
-            },
+            {"type": "quick", "action": "Увеличьте скорость ответа на запросы клиентов до 2 часов", "effect": "Повышение удовлетворённости", "impact": 2.5},
+            {"type": "medium", "action": "Внедрите практику регулярной обратной связи с клиентами", "effect": "Улучшение качества сервиса", "impact": 4.0},
         ],
         "task_completion": [
-            {
-                "type": "quick",
-                "action": "Используйте технику Pomodoro для повышения продуктивности",
-                "effect": "Увеличение выполненных задач",
-                "impact": 3.0,
-            },
-            {
-                "type": "medium",
-                "action": "Освойте методологию GTD (Getting Things Done)",
-                "effect": "Системный подход к задачам",
-                "impact": 5.0,
-            },
+            {"type": "quick", "action": "Используйте технику Pomodoro для повышения продуктивности", "effect": "Увеличение выполненных задач", "impact": 3.0},
+            {"type": "medium", "action": "Освойте методологию GTD (Getting Things Done)", "effect": "Системный подход к задачам", "impact": 5.0},
+        ],
+        "quality": [
+            {"type": "quick", "action": "Делайте самопроверку перед сдачей работы", "effect": "Снижение ошибок", "impact": 3.0},
+            {"type": "medium", "action": "Запросите обратную связь от руководителя и составьте чек-лист", "effect": "Системное улучшение качества", "impact": 4.0},
+        ],
+        "attendance": [
+            {"type": "quick", "action": "Планируйте отсутствия заранее и минимизируйте незапланированные пропуски", "effect": "Стабильная посещаемость", "impact": 2.0},
         ],
         "training": [
-            {
-                "type": "quick",
-                "action": "Запланируйте 2 часа в неделю на обучение",
-                "effect": "Выполнение плана обучения",
-                "impact": 4.0,
-            },
+            {"type": "quick", "action": "Запланируйте 2 часа в неделю на обучение", "effect": "Выполнение плана обучения", "impact": 4.0},
         ],
     }
 
-    def generate_recommendations(
-        self, kpi_data: Dict[str, Any], employee_data: Dict[str, Any]
-    ) -> Dict[str, Any]:
-        """Сгенерировать персонализированные рекомендации"""
+    def generate_recommendations(self, kpi_data: Dict[str, Any], employee_data: Dict[str, Any]) -> Dict[str, Any]:
         low_metrics = kpi_data.get("low_metrics", kpi_data.get("metrics", {}))
         total_score = kpi_data.get("total_score", 0)
+        if isinstance(total_score, str):
+            total_score = float(total_score)
 
         recommendations = []
         priority = 1
 
-        # Сортируем метрики по важности (низкие сначала)
         sorted_metrics = sorted(
             low_metrics.items(),
-            key=lambda x: x[1].get("completion", 100)
+            key=lambda x: float(x[1].get("completion", 100)) if isinstance(x[1].get("completion", 100), (int, float, str)) else 100
         )
 
         for metric_key, metric_data in sorted_metrics:
             completion = metric_data.get("completion", 100)
+            if isinstance(completion, str):
+                completion = float(completion)
             if completion >= 90:
                 continue
-
-            metric_recs = self.RECOMMENDATION_BASE.get(metric_key, [])
-
-            for rec in metric_recs:
+            for rec in self.RECOMMENDATION_BASE.get(metric_key, []):
                 recommendations.append({
                     **rec,
                     "priority": priority,
@@ -409,33 +417,17 @@ class EmployeeRecommendationEngine:
                     "expected_impact": rec.get("impact", 0),
                 })
                 priority += 1
-
                 if len(recommendations) >= 7:
                     break
-
             if len(recommendations) >= 7:
                 break
 
-        # Добавляем общие рекомендации если мало
         if len(recommendations) < 3:
             recommendations.extend([
-                {
-                    "type": "quick",
-                    "action": "Обсудите ваши показатели с руководителем",
-                    "effect": "Получение обратной связи и поддержки",
-                    "priority": priority,
-                    "expected_impact": 2.0,
-                },
-                {
-                    "type": "medium",
-                    "action": "Изучите практики топ-перформеров вашего отдела",
-                    "effect": "Перенятие лучших практик",
-                    "priority": priority + 1,
-                    "expected_impact": 3.0,
-                },
+                {"type": "quick", "action": "Обсудите ваши показатели с руководителем", "effect": "Получение обратной связи и поддержки", "priority": priority, "expected_impact": 2.0},
+                {"type": "medium", "action": "Изучите практики топ-перформеров вашего отдела", "effect": "Перенятие лучших практик", "priority": priority + 1, "expected_impact": 3.0},
             ])
 
-        # Рассчитываем ожидаемое улучшение
         total_impact = sum(r.get("expected_impact", 0) for r in recommendations[:5])
 
         return {
@@ -448,8 +440,42 @@ class EmployeeRecommendationEngine:
         }
 
 
+# ============== Conversational Chat Handler ==============
+
+IMPROVEMENT_TIPS = {
+    "sales": {
+        "ru": "усильте follow-up с клиентами и расширьте воронку",
+        "uz": "мижозлар билан алоқани кучайтиринг ва воронкани кенгайтиринг",
+    },
+    "customer_satisfaction": {
+        "ru": "ускорьте ответы на запросы и собирайте обратную связь",
+        "uz": "сўровларга тезроқ жавоб беринг ва фикр-мулоҳаза йиғинг",
+    },
+    "task_completion": {
+        "ru": "расставьте приоритеты и закрывайте задачи последовательно",
+        "uz": "вазифаларни муҳимлик бўйича тартиблаб, кетма-кет бажаринг",
+    },
+    "quality": {
+        "ru": "проверяйте работу перед сдачей и запросите feedback у руководителя",
+        "uz": "ишни топширишдан олдин текширинг ва раҳбардан фикр олинг",
+    },
+    "attendance": {
+        "ru": "минимизируйте незапланированные пропуски",
+        "uz": "режалаштирилмаган қатнашмасликни камайтиринг",
+    },
+    "training": {
+        "ru": "запланируйте 2 часа в неделю на обязательные курсы",
+        "uz": "ҳафтада 2 соат мажбурий курсларга ажратинг",
+    },
+}
+DEFAULT_TIP = {
+    "ru": "обсудите с руководителем план действий",
+    "uz": "раҳбар билан ҳаракат режасини муҳокама қилинг",
+}
+
+
 class EmployeeChatHandler:
-    """Обработчик чата с сотрудниками"""
+    """Conversational HR assistant — краткие, вежливые, на языке пользователя"""
 
     def __init__(self):
         self.intent_detector = EmployeeIntentDetector()
@@ -464,16 +490,16 @@ class EmployeeChatHandler:
         facts: Dict[str, Any],
         policies: List[Dict[str, Any]],
     ) -> Dict[str, Any]:
-        """Обработать сообщение чата"""
+        lang = detect_language(message)
         intent = self.intent_detector.detect(message)
 
-        response = self._generate_response(
-            message=message,
-            intent=intent,
-            context=context,
-            facts=facts,
-            policies=policies,
-        )
+        # Follow-up detection: short message after existing conversation
+        if intent == EmployeeIntent.GENERAL and self._is_followup(message) and history:
+            prev = self._infer_topic_from_history(history, facts)
+            if prev:
+                intent = prev
+
+        response = self._route(message, intent, context, facts, policies, history, lang)
 
         return {
             "response": response,
@@ -482,368 +508,417 @@ class EmployeeChatHandler:
             "sources": self._extract_sources(policies),
         }
 
-    def _generate_response(
-        self,
-        message: str,
-        intent: EmployeeIntent,
-        context: Dict[str, Any],
-        facts: Dict[str, Any],
-        policies: List[Dict[str, Any]],
-    ) -> str:
-        """Сгенерировать ответ на основе интента"""
+    # ===================== Routing =====================
 
+    def _route(self, message, intent, context, facts, policies, history, lang):
         handlers = {
-            EmployeeIntent.GREETING: lambda: self._handle_greeting(context),
-            EmployeeIntent.HELP: lambda: self._handle_help(),
-            EmployeeIntent.KPI_QUESTION: lambda: self._handle_kpi_question(facts),
-            EmployeeIntent.KPI_EXPLAIN: lambda: self._handle_kpi_explain(facts),
-            EmployeeIntent.BONUS_INQUIRY: lambda: self._handle_bonus_inquiry(facts),
-            EmployeeIntent.SALARY_QUESTION: lambda: self._handle_salary_question(context),
-            EmployeeIntent.LEAVE_BALANCE: lambda: self._handle_leave_balance(context),
-            EmployeeIntent.LEAVE_REQUEST: lambda: self._handle_leave_request(policies),
-            EmployeeIntent.DISCIPLINE_QUESTION: lambda: self._handle_discipline_question(context, facts),
-            EmployeeIntent.RECOGNITION_QUESTION: lambda: self._handle_recognition_question(context, facts),
-            EmployeeIntent.TRAINING_QUESTION: lambda: self._handle_training_question(context),
-            EmployeeIntent.SCHEDULE_QUESTION: lambda: self._handle_schedule_question(context),
-            EmployeeIntent.BENEFITS_QUESTION: lambda: self._handle_benefits_question(context),
-            EmployeeIntent.POLICY_SEARCH: lambda: self._handle_policy_search(message, policies),
+            EmployeeIntent.GREETING: lambda: self._greeting(context, lang),
+            EmployeeIntent.SMALLTALK: lambda: self._smalltalk(lang),
+            EmployeeIntent.CAPABILITIES: lambda: self._capabilities(lang),
+            EmployeeIntent.KPI_SCORE: lambda: self._kpi_score(facts, lang),
+            EmployeeIntent.KPI_EXPLAIN: lambda: self._kpi_explain(facts, lang),
+            EmployeeIntent.KPI_IMPROVE: lambda: self._kpi_improve(facts, lang),
+            EmployeeIntent.BONUS_INQUIRY: lambda: self._bonus(facts, lang),
+            EmployeeIntent.SALARY_QUESTION: lambda: self._salary(lang),
+            EmployeeIntent.LEAVE_BALANCE: lambda: self._leave_balance(lang),
+            EmployeeIntent.LEAVE_REQUEST: lambda: self._leave_request(policies, lang),
+            EmployeeIntent.DISCIPLINE_QUESTION: lambda: self._discipline(facts, lang),
+            EmployeeIntent.RECOGNITION_QUESTION: lambda: self._recognition(facts, lang),
+            EmployeeIntent.TRAINING_QUESTION: lambda: self._training(lang),
+            EmployeeIntent.SCHEDULE_QUESTION: lambda: self._schedule(lang),
+            EmployeeIntent.BENEFITS_QUESTION: lambda: self._benefits(lang),
+            EmployeeIntent.POLICY_SEARCH: lambda: self._policy_search(message, policies, lang),
         }
-
         handler = handlers.get(intent)
         if handler:
             return handler()
-        return self._handle_general_question(message, context, policies)
+        return self._general(message, policies, lang)
 
-    def _handle_kpi_question(self, facts: Dict) -> str:
-        """Ответ на вопрос о KPI"""
-        kpi = facts.get("current_kpi", {})
+    # ===================== Follow-up =====================
 
-        if not kpi:
+    def _is_followup(self, message: str) -> bool:
+        msg = message.lower().strip()
+        patterns = [
+            r"^да$", r"^ага$", r"^ок$", r"^хорошо$", r"^давай$", r"^ладно$",
+            r"^конечно$", r"^расскажи$", r"подробн", r"расскажи.*ещё", r"продолж",
+            r"а\s+(как|что|почему)", r"что\s+ещё",
+            r"^ҳа$", r"^хўп$", r"^майли$", r"^яна$", r"батафсил",
+        ]
+        return any(re.search(p, msg) for p in patterns)
+
+    def _infer_topic_from_history(self, history, facts):
+        for msg in reversed(history):
+            if msg.get("role") != "assistant":
+                continue
+            text = msg.get("content", "").lower()
+            if any(w in text for w in ["kpi", "кпи", "показател"]):
+                return EmployeeIntent.KPI_IMPROVE if facts.get("current_kpi") else EmployeeIntent.KPI_SCORE
+            if any(w in text for w in ["бонус", "премия", "мукофот"]):
+                return EmployeeIntent.BONUS_INQUIRY
+            if any(w in text for w in ["отпуск", "таътил"]):
+                return EmployeeIntent.LEAVE_REQUEST
+            if any(w in text for w in ["обучен", "курс", "ўқув"]):
+                return EmployeeIntent.TRAINING_QUESTION
+            break
+        return None
+
+    # ===================== Handlers =====================
+
+    def _greeting(self, context, lang):
+        if lang == "uz":
+            return "Ассалому алайкум! Мен ходимлар порталининг AI-ёрдамчисиман. Қандай ёрдам бера оламан?"
+        return "Здравствуйте! Я AI-помощник портала сотрудников. Чем могу помочь?"
+
+    def _smalltalk(self, lang):
+        if lang == "uz":
+            return "Раҳмат, яхши! Иш масалалари бўйича ёрдам бера оламан — KPI, бонуслар, таътил, сиёсатлар. Нимани билмоқчисиз?"
+        return "Всё хорошо, спасибо! Могу помочь по рабочим вопросам — KPI, бонусы, отпуск, внутренние правила. Что вас интересует?"
+
+    def _capabilities(self, lang):
+        if lang == "uz":
             return (
-                "К сожалению, у меня нет данных о вашем текущем KPI. "
-                "Пожалуйста, обратитесь в HR отдел или проверьте раздел 'Мои KPI' в портале."
+                "Мен қуйидагилар бўйича ёрдам бера оламан:\n\n"
+                "• KPI кўрсаткичлари ва тавсиялар\n"
+                "• Бонуслар ва маош\n"
+                "• Таътил ва бўшлиқлар\n"
+                "• Ўқув курслар\n"
+                "• Ички сиёсат ва регламентлар\n\n"
+                "Саволингизни ёзинг!"
             )
+        return (
+            "Я могу помочь с:\n\n"
+            "• KPI — текущие показатели, объяснение, план улучшения\n"
+            "• Бонусы и зарплата\n"
+            "• Отпуск и отсутствия\n"
+            "• Обучение и курсы\n"
+            "• Внутренние политики и регламенты\n\n"
+            "Задайте вопрос!"
+        )
 
-        score = kpi.get("total_score", 0)
-        period = kpi.get("period", "текущий месяц")
+    # ---------- KPI ----------
 
-        status = "отлично" if score >= 90 else "хорошо" if score >= 70 else "требует улучшения" if score >= 50 else "критически низкий"
+    def _kpi_score(self, facts, lang):
+        kpi = facts.get("current_kpi", {})
+        if not kpi:
+            if lang == "uz":
+                return "Ҳозирча KPI маълумотлари мавжуд эмас. Порталдаги «Менинг KPI» бўлимини текширинг ёки HR га мурожаат қилинг."
+            return "Данных о вашем KPI пока нет. Проверьте раздел «Мои KPI» на портале или обратитесь в HR."
 
-        response = f"Ваш KPI за {period} составляет {score:.1f}% - это {status}.\n\n"
+        score = float(kpi.get("total_score", 0))
+        period = kpi.get("period", "текущий период" if lang == "ru" else "жорий давр")
+
+        if score >= 90:
+            label = ("отличный результат", "аъло натижа")
+        elif score >= 70:
+            label = ("хороший результат", "яхши натижа")
+        elif score >= 50:
+            label = ("есть над чем поработать", "яхшилаш мумкин")
+        else:
+            label = ("требует внимания", "диққат керак")
+
+        idx = 0 if lang == "ru" else 1
+        if lang == "uz":
+            response = f"Сизнинг KPI ({period}): {score:.1f}% — {label[idx]}."
+        else:
+            response = f"Ваш KPI за {period}: {score:.1f}% — {label[idx]}."
+
+        # One key insight — lowest metric
+        metrics = kpi.get("metrics", {})
+        low = [(k, v) for k, v in metrics.items()
+               if float(v.get("completion", 100)) < 70]
+        if low:
+            worst = min(low, key=lambda x: float(x[1].get("completion", 0)))
+            name = worst[1].get("name", worst[0])
+            comp = float(worst[1].get("completion", 0))
+            if lang == "uz":
+                response += f"\n\nЭнг паст кўрсаткич: {name} ({comp:.0f}%). Яхшилаш бўйича маслаҳат берайми?"
+            else:
+                response += f"\n\nСамый низкий показатель: {name} ({comp:.0f}%). Хотите советы по улучшению?"
+        elif kpi.get("bonus_eligible"):
+            if lang == "uz":
+                response += "\n\nСиз бонусга ҳақлисиз! 🎉"
+            else:
+                response += "\n\nВы имеете право на бонус! 🎉"
+
+        return response
+
+    def _kpi_explain(self, facts, lang):
+        kpi = facts.get("current_kpi", {})
+        if not kpi:
+            if lang == "uz":
+                return "KPI маълумотлари йўқ. «Менинг KPI» бўлимини текширинг."
+            return "Нет данных о KPI. Проверьте раздел «Мои KPI» на портале."
+
+        score = float(kpi.get("total_score", 0))
+        metrics = kpi.get("metrics", {})
+        low = {k: v for k, v in metrics.items()
+               if float(v.get("completion", 100)) < 70}
+
+        if not low:
+            if lang == "uz":
+                return f"Сизнинг KPI {score:.1f}% — барча кўрсаткичлар нормада. Давом этинг! 💪"
+            return f"Ваш KPI {score:.1f}% — все показатели в норме. Продолжайте в том же духе! 💪"
+
+        sorted_low = sorted(low.items(), key=lambda x: float(x[1].get("completion", 0)))[:3]
+
+        if lang == "uz":
+            response = f"KPI {score:.1f}%. Қуйидаги кўрсаткичлар пастга тортмоқда:\n\n"
+            for key, m in sorted_low:
+                response += f"• {m.get('name', key)}: {float(m.get('completion', 0)):.0f}%\n"
+            response += "\nЯхшилаш режасини тузиб берайми?"
+        else:
+            response = f"KPI {score:.1f}%. Вот что тянет вниз:\n\n"
+            for key, m in sorted_low:
+                response += f"• {m.get('name', key)}: {float(m.get('completion', 0)):.0f}%\n"
+            response += "\nХотите, подготовлю план улучшения?"
+
+        return response
+
+    def _kpi_improve(self, facts, lang):
+        kpi = facts.get("current_kpi", {})
+        if not kpi:
+            if lang == "uz":
+                return "KPI маълумотлари бўлмаса, аниқ тавсия бериш қийин. Аввал «Менинг KPI» бўлимини текширинг."
+            return "Без данных о KPI сложно дать конкретные советы. Сначала проверьте раздел «Мои KPI»."
 
         metrics = kpi.get("metrics", {})
-        if metrics:
-            response += "Основные показатели:\n"
-            for key, metric in metrics.items():
-                completion = metric.get("completion", 0)
-                icon = "✅" if completion >= 90 else "⚠️" if completion >= 70 else "❌"
-                response += f"{icon} {metric.get('name', key)}: {completion:.1f}%\n"
+        low = {k: v for k, v in metrics.items()
+               if float(v.get("completion", 100)) < 90}
 
-        if kpi.get("bonus_eligible"):
-            response += f"\n💰 Вы имеете право на бонус!"
+        if not low:
+            if lang == "uz":
+                return "Барча кўрсаткичларингиз юқори! Натижани сақлаб қолинг ва ҳамкасбларга тажриба улашинг."
+            return "Все показатели на высоком уровне! Поддерживайте результат и делитесь опытом с коллегами."
 
-        return response
+        sorted_low = sorted(low.items(), key=lambda x: float(x[1].get("completion", 0)))[:3]
 
-    def _handle_kpi_explain(self, facts: Dict) -> str:
-        """Объяснение KPI"""
-        kpi = facts.get("current_kpi", {})
-
-        if not kpi:
-            return "Для объяснения KPI необходимы данные о ваших показателях. Пожалуйста, откройте раздел 'Мои KPI'."
-
-        explanation = self.kpi_explainer.explain_kpi(kpi)
-
-        response = explanation.get("explanation", "") + "\n\n"
-
-        metric_explanations = explanation.get("metric_explanations", {})
-        if metric_explanations:
-            response += "📊 По отдельным показателям:\n"
-            for metric_name, explanation_text in metric_explanations.items():
-                response += f"\n• {metric_name}: {explanation_text}\n"
-
-        suggestions = explanation.get("improvement_suggestions", [])
-        if suggestions:
-            response += "\n💡 Рекомендации:\n"
-            for suggestion in suggestions:
-                response += f"• {suggestion}\n"
+        if lang == "uz":
+            response = "KPI ни яхшилаш учун қуйидагиларга эътибор беринг:\n\n"
+            for i, (key, m) in enumerate(sorted_low, 1):
+                tip = IMPROVEMENT_TIPS.get(key, DEFAULT_TIP).get(lang, DEFAULT_TIP["uz"])
+                response += f"{i}. **{m.get('name', key)}** ({float(m.get('completion', 0)):.0f}%) — {tip}\n"
+            response += "\nБатафсил режа керакми?"
+        else:
+            response = "Чтобы поднять KPI, сфокусируйтесь на:\n\n"
+            for i, (key, m) in enumerate(sorted_low, 1):
+                tip = IMPROVEMENT_TIPS.get(key, DEFAULT_TIP).get(lang, DEFAULT_TIP["ru"])
+                response += f"{i}. **{m.get('name', key)}** ({float(m.get('completion', 0)):.0f}%) — {tip}\n"
+            response += "\nНужен подробный план?"
 
         return response
 
-    def _handle_bonus_inquiry(self, facts: Dict) -> str:
-        """Ответ на вопрос о бонусе"""
-        kpi = facts.get("current_kpi", {})
+    # ---------- Finance ----------
 
+    def _bonus(self, facts, lang):
+        kpi = facts.get("current_kpi", {})
         if not kpi:
+            if lang == "uz":
+                return "Бонус маълумотлари учун KPI кўрсаткичларингиз керак. «Менинг KPI» бўлимини текширинг ёки HR га мурожаат қилинг."
+            return "Для информации о бонусе нужны данные KPI. Проверьте раздел «Мои KPI» или обратитесь в HR."
+
+        score = float(kpi.get("total_score", 0))
+        eligible = kpi.get("bonus_eligible", False)
+
+        if eligible:
+            if lang == "uz":
+                return f"KPI {score:.1f}% — сиз бонусга ҳақлисиз! Бонуслар одатда давр ёпилгандан кейинги ойда ҳисобланади."
+            return f"При KPI {score:.1f}% вы имеете право на бонус! Бонусы обычно начисляются в следующем месяце после закрытия периода."
+        else:
+            if lang == "uz":
+                return f"KPI {score:.1f}% — ҳозирча бонус ҳисобланмайди. Минимал чегара — 50%. KPI ни яхшилаш бўйича маслаҳат берайми?"
+            return f"При KPI {score:.1f}% бонус пока не начисляется. Минимальный порог — 50%. Хотите советы по улучшению?"
+
+    def _salary(self, lang):
+        if lang == "uz":
             return (
-                "Для информации о бонусе необходимы данные о вашем KPI. "
-                "Бонус обычно начисляется при KPI от 50% и зависит от достигнутых показателей."
+                "Маош тўловлари: аванс ҳар ойнинг 15-санасида, асосий маош ой охирида.\n"
+                "Аниқ миқдор учун HR бўлимига мурожаат қилинг ёки порталдаги «Менинг маълумотларим» бўлимини текширинг."
             )
+        return (
+            "Зарплата выплачивается: аванс — 15 числа, основная часть — в конце месяца.\n"
+            "Для уточнения суммы обратитесь в HR или проверьте раздел «Мои данные» на портале."
+        )
 
-        score = kpi.get("total_score", 0)
-        bonus_eligible = kpi.get("bonus_eligible", False)
+    # ---------- Leave ----------
 
-        if bonus_eligible:
+    def _leave_balance(self, lang):
+        if lang == "uz":
             return (
-                f"✅ При текущем KPI {score:.1f}% вы имеете право на бонус!\n\n"
-                f"Размер бонуса зависит от коэффициента:\n"
-                f"• KPI 100%+ → коэффициент 1.5\n"
-                f"• KPI 90-99% → коэффициент 1.2\n"
-                f"• KPI 70-89% → коэффициент 1.0\n"
-                f"• KPI 50-69% → коэффициент 0.7\n\n"
-                f"Бонусы обычно выплачиваются в следующем месяце после закрытия периода."
+                "Таътил қолдиғини порталдаги «Менинг маълумотларим» бўлимидан кўришингиз мумкин.\n"
+                "Стандарт: йилига 28 календар кун. Аниқ маълумот учун HR га мурожаат қилинг."
+            )
+        return (
+            "Остаток отпуска можно посмотреть в разделе «Мои данные» на портале.\n"
+            "Стандарт: 28 календарных дней в год. Для уточнения обратитесь в HR."
+        )
+
+    def _leave_request(self, policies, lang):
+        if lang == "uz":
+            response = (
+                "Таътилни расмийлаштириш:\n\n"
+                "1. Раҳбар билан саналарни келишинг\n"
+                "2. Камида 2 ҳафта олдин ариза беринг\n"
+                "3. HR тасдиғини кутинг\n"
             )
         else:
-            return (
-                f"❌ При текущем KPI {score:.1f}% бонус не начисляется.\n\n"
-                f"Минимальный порог для получения бонуса - 50%.\n"
-                f"Рекомендую обратить внимание на показатели с низким выполнением."
+            response = (
+                "Порядок оформления отпуска:\n\n"
+                "1. Согласуйте даты с руководителем\n"
+                "2. Подайте заявление минимум за 2 недели\n"
+                "3. Дождитесь утверждения HR\n"
             )
 
-    def _handle_leave_balance(self, context: Dict) -> str:
-        """Остаток отпуска"""
-        return (
-            "Информация об остатке отпуска доступна в системе управления персоналом.\n\n"
-            "По стандартным правилам:\n"
-            "• Базовый отпуск: 28 календарных дней в год\n"
-            "• Дополнительный отпуск может зависеть от стажа и условий труда\n\n"
-            "Для точной информации обратитесь в HR отдел или проверьте личный кабинет."
-        )
-
-    def _handle_leave_request(self, policies: List[Dict]) -> str:
-        """Оформление отпуска"""
-        response = (
-            "Порядок оформления отпуска:\n\n"
-            "1️⃣ Согласуйте даты отпуска с руководителем\n"
-            "2️⃣ Подайте заявление не менее чем за 2 недели\n"
-            "3️⃣ Дождитесь утверждения HR отделом\n"
-            "4️⃣ Получите приказ об отпуске\n\n"
-        )
-
-        # Добавляем ссылки на политики если есть
-        leave_policies = [p for p in policies if "отпуск" in p.get("title", "").lower()]
+        leave_policies = [p for p in policies
+                          if any(w in p.get("title", "").lower() for w in ["отпуск", "таътил", "leave"])]
         if leave_policies:
-            response += "📄 Связанные документы:\n"
-            for policy in leave_policies[:3]:
-                response += f"• {policy.get('title')} ({policy.get('code', '')})\n"
+            if lang == "uz":
+                response += "\nТегишли ҳужжатлар:\n"
+            else:
+                response += "\nСвязанные документы:\n"
+            for p in leave_policies[:2]:
+                response += f"• {p.get('title')} ({p.get('code', '')})\n"
 
         return response
 
-    def _handle_policy_search(self, message: str, policies: List[Dict]) -> str:
-        """Поиск политик"""
-        if not policies:
-            return (
-                "По вашему запросу политики не найдены.\n"
-                "Попробуйте использовать другие ключевые слова или "
-                "обратитесь в раздел 'Политики' для полного списка документов."
-            )
+    # ---------- Discipline ----------
 
-        response = f"📚 Найдено документов: {len(policies)}\n\n"
-
-        for policy in policies[:5]:
-            response += (
-                f"📄 **{policy.get('title')}**\n"
-                f"   Код: {policy.get('code', 'N/A')} | "
-                f"Категория: {policy.get('category', 'N/A')}\n"
-                f"   {policy.get('summary', '')[:100]}...\n\n"
-            )
-
-        return response
-
-    def _handle_greeting(self, context: Dict) -> str:
-        """Приветствие"""
-        department = context.get("department", "")
-        position = context.get("position", "")
-
-        greeting = "Ассалому алайкум! 👋\n\n"
-        greeting += "Мен BRB Bank ходимлар порталининг AI-ёрдамчисиман.\n\n"
-
-        if position:
-            greeting += f"Сиз: {position}"
-            if department:
-                greeting += f" ({department})"
-            greeting += "\n\n"
-
-        greeting += "Сизга қандай ёрдам бера оламан?"
-        return greeting
-
-    def _handle_help(self) -> str:
-        """Помощь по возможностям"""
-        return (
-            "Мен сизга қуйидагилар бўйича ёрдам бера оламан:\n\n"
-            "📊 **KPI ва самарадорлик**\n"
-            "   • Менинг KPI қанча?\n"
-            "   • Нега KPI паст?\n"
-            "   • KPI ни қандай яхшилаш мумкин?\n\n"
-            "💰 **Молиявий саволлар**\n"
-            "   • Бонус қачон?\n"
-            "   • Премия миқдори\n"
-            "   • Маош тўғрисида\n\n"
-            "🏖️ **Таътил ва бўшлиқлар**\n"
-            "   • Таътил қолдиғи\n"
-            "   • Таътилни қандай расмийлаштириш\n\n"
-            "📋 **Интизом**\n"
-            "   • Интизомий чоралар\n"
-            "   • Жарималар тўғрисида\n\n"
-            "🏆 **Эътироф**\n"
-            "   • Мукофотлар тизими\n"
-            "   • Миннатдорлик билдириш\n\n"
-            "📚 **Ўқув курслар**\n"
-            "   • Мажбурий курслар\n"
-            "   • Сертификатлар\n\n"
-            "📄 **Сиёсат ва қоидалар**\n"
-            "   • Банк сиёсатлари\n"
-            "   • Регламентлар\n\n"
-            "Саволингизни ёзинг!"
-        )
-
-    def _handle_salary_question(self, context: Dict) -> str:
-        """Вопросы о зарплате"""
-        return (
-            "💵 **Маош тўғрисида маълумот**\n\n"
-            "Маош тўловлари:\n"
-            "• Аванс: ҳар ойнинг 15-санасида\n"
-            "• Асосий маош: ҳар ойнинг охирида\n\n"
-            "Маош миқдори ва тафсилотлари учун:\n"
-            "• HR бўлимига мурожаат қилинг\n"
-            "• Ёки 'Менинг маълумотларим' бўлимини текширинг\n\n"
-            "Маош карта орқали ўтказилади."
-        )
-
-    def _handle_discipline_question(self, context: Dict, facts: Dict = None) -> str:
-        """Вопросы о дисциплине"""
-        facts = facts or {}
+    def _discipline(self, facts, lang):
         discipline = facts.get("discipline", {})
-
-        response = "📋 **Интизомий чоралар тўғрисида**\n\n"
-
-        # Показываем реальные данные если есть
         active_count = discipline.get("active_count", 0)
+
         if active_count > 0:
-            response += f"⚠️ Сизда {active_count} та фаол интизомий чора мавжуд:\n\n"
-            for action in discipline.get("actions", []):
-                response += f"• {action.get('type', 'N/A')} — {action.get('date', 'N/A')} ({action.get('status', 'N/A')})\n"
-            response += "\n"
-        elif discipline:
-            response += "✅ Сизда фаол интизомий чоралар йўқ.\n\n"
+            if lang == "uz":
+                response = f"Сизда {active_count} та фаол интизомий чора мавжуд:\n\n"
+                for a in discipline.get("actions", []):
+                    response += f"• {a.get('type', '—')} — {a.get('date', '—')} ({a.get('status', '—')})\n"
+                response += "\nШикоят қилиш муддати — 10 иш куни. Тафсилотлар учун HR га мурожаат қилинг."
+            else:
+                response = f"У вас {active_count} активных дисциплинарных мер:\n\n"
+                for a in discipline.get("actions", []):
+                    response += f"• {a.get('type', '—')} — {a.get('date', '—')} ({a.get('status', '—')})\n"
+                response += "\nСрок обжалования — 10 рабочих дней. Подробности в HR."
+            return response
 
-        response += (
-            "Интизомий чоралар турлари:\n"
-            "• ⚠️ Огоҳлантириш - енгил бузилишлар\n"
-            "• 📝 Ҳайфсан - ўртача бузилишлар\n"
-            "• 💰 Жарима - молиявий жазо\n"
-            "• 🚫 Ишдан четлатиш - жиддий бузилишлар\n\n"
-            "Шикоят қилиш:\n"
-            "• Шикоят муддати - 10 иш куни\n"
-            "• Шикоят матни камида 50 та белги\n\n"
-            "Тафсилотлар учун: Портал → 'Интизом' бўлими"
-        )
-        return response
+        if discipline:
+            if lang == "uz":
+                return "Сизда фаол интизомий чоралар йўқ. ✅"
+            return "Активных дисциплинарных мер нет. ✅"
 
-    def _handle_recognition_question(self, context: Dict, facts: Dict = None) -> str:
-        """Вопросы о признании"""
-        facts = facts or {}
+        if lang == "uz":
+            return "Интизомий чоралар тўғрисида маълумот олиш учун HR бўлимига мурожаат қилинг ёки порталдаги «Интизом» бўлимини текширинг."
+        return "Информацию о дисциплинарных мерах можно посмотреть в разделе «Дисциплина» на портале или уточнить в HR."
+
+    # ---------- Recognition ----------
+
+    def _recognition(self, facts, lang):
         recognition = facts.get("recognition", {})
         total_points = recognition.get("total_points", 0)
 
-        response = "🏆 **Эътироф тизими**\n\n"
+        if lang == "uz":
+            response = "🏆 Эътироф тизими: ой/чорак/йил ходими номинациялари мавжуд.\n"
+            if total_points > 0:
+                response += f"Сизнинг баллингиз: {total_points}.\n"
+            response += "Номзод кўрсатиш: Портал → «Эътироф» → «Номзод кўрсатиш»."
+        else:
+            response = "🏆 Система признания: номинации «Сотрудник месяца/квартала/года».\n"
+            if total_points > 0:
+                response += f"Ваши баллы: {total_points}.\n"
+            response += "Номинировать коллегу: Портал → «Признание» → «Номинировать»."
 
-        if total_points > 0:
-            response += f"⭐ Сизнинг жами баллингиз: {total_points}\n\n"
-
-        response += (
-            "BRB Bank ходимларни қўллаб-қувватлайди!\n\n"
-            "Эътироф турлари:\n"
-            "• ⭐ Ой ходими\n"
-            "• 🌟 Чорак ходими\n"
-            "• 👑 Йил ходими\n"
-            "• 🎯 Махсус мукофотлар\n\n"
-            "Номзод кўрсатиш:\n"
-            "👉 Портал → 'Эътироф' → 'Номзод кўрсатиш'\n\n"
-            "Ўз ютуқларингиз ва балларингизни кўриш:\n"
-            "👉 'Менинг балларим' бўлими\n\n"
-            "Ҳамкасбларингизни мукофотланг!"
-        )
         return response
 
-    def _handle_training_question(self, context: Dict) -> str:
-        """Вопросы об обучении"""
+    # ---------- Training ----------
+
+    def _training(self, lang):
+        if lang == "uz":
+            return (
+                "Мажбурий курслар: AML/KYC, маълумотлар хавфсизлиги, банк этикаси.\n"
+                "Курслар ўз вақтида ўтилиши KPI га таъсир қилади.\n"
+                "Рўйхат ва жадвал — ўқув порталида. Саволлар бўлса, HR га мурожаат қилинг."
+            )
         return (
-            "📚 **Ўқув курслар**\n\n"
-            "Мажбурий курслар:\n"
-            "• AML/KYC асослари\n"
-            "• Маълумотлар хавфсизлиги\n"
-            "• Банк этикаси\n\n"
-            "Курсларни кўриш:\n"
-            "👉 Ўқув порталига киринг\n\n"
-            "⚠️ Эслатма:\n"
-            "• Мажбурий курслар ўз вақтида ўтилиши керак\n"
-            "• Курслар KPI га таъсир қилади\n"
-            "• Сертификатлар HR бўлимида\n\n"
-            "Саволлар бўлса, HR бўлимига мурожаат қилинг."
+            "Обязательные курсы: AML/KYC, информационная безопасность, банковская этика.\n"
+            "Своевременное прохождение влияет на KPI.\n"
+            "Список и расписание — на учебном портале. Вопросы — в HR."
         )
 
-    def _handle_schedule_question(self, context: Dict) -> str:
-        """Вопросы о графике работы"""
+    # ---------- Schedule ----------
+
+    def _schedule(self, lang):
+        if lang == "uz":
+            return (
+                "Стандарт иш графиги: Душанба–Жума, 09:00–18:00, тушлик 13:00–14:00.\n"
+                "Масофавий иш — раҳбар рухсати билан, ҳафтада 2 кунгача.\n"
+                "Ўзгартиришлар учун HR га ариза юборинг."
+            )
         return (
-            "🕐 **Иш вақти**\n\n"
-            "Стандарт иш графиги:\n"
-            "• Душанба-Жума: 09:00 - 18:00\n"
-            "• Тушлик: 13:00 - 14:00\n"
-            "• Шанба-Якшанба: дам олиш\n\n"
-            "Иш графигини ўзгартириш:\n"
-            "• Раҳбар билан келишинг\n"
-            "• HR бўлимига ариза юборинг\n\n"
-            "Масофавий иш:\n"
-            "• Раҳбар рухсати билан\n"
-            "• Ҳафтада 2 кунгача\n\n"
-            "Тафсилотлар учун HR га мурожаат қилинг."
+            "Стандартный график: Пн–Пт, 09:00–18:00, обед 13:00–14:00.\n"
+            "Удалённая работа — с разрешения руководителя, до 2 дней в неделю.\n"
+            "Для изменений подайте заявку в HR."
         )
 
-    def _handle_benefits_question(self, context: Dict) -> str:
-        """Вопросы о льготах"""
+    # ---------- Benefits ----------
+
+    def _benefits(self, lang):
+        if lang == "uz":
+            return (
+                "Ходимларга: ДМС полиси, имтиёзли кредитлар, депозитларга юқори фоиз, "
+                "бепул ўқув курслар, корпоратив спорт залига чегирма.\n"
+                "Тўлиқ рўйхат учун HR бўлимига мурожаат қилинг."
+            )
         return (
-            "🎁 **Имтиёзлар ва соцпакет**\n\n"
-            "BRB Bank ходимларига:\n\n"
-            "🏥 **Тиббий суғурта**\n"
-            "• ДМС полиси\n"
-            "• Оила аъзолари учун чегирма\n\n"
-            "💰 **Молиявий имтиёзлар**\n"
-            "• Имтиёзли кредитлар\n"
-            "• Депозитларга юқори фоиз\n\n"
-            "🎓 **Ривожланиш**\n"
-            "• Бепул ўқув курслар\n"
-            "• Сертификатлаш учун тўлов\n\n"
-            "🏋️ **Соғлиқ**\n"
-            "• Корпоратив спорт залига чегирма\n\n"
-            "Тўлиқ рўйхат учун HR бўлимига мурожаат қилинг."
+            "Сотрудникам доступны: ДМС, льготные кредиты, повышенные ставки по депозитам, "
+            "бесплатное обучение, скидки на корпоративный спортзал.\n"
+            "Полный перечень — в HR."
         )
 
-    def _handle_general_question(
-        self, message: str, context: Dict, policies: List[Dict]
-    ) -> str:
-        """Общий вопрос"""
-        return (
-            "Мен - BRB Bank ходимлар порталининг AI-ёрдамчисиман.\n\n"
-            "Сизга қуйидагилар бўйича ёрдам бера оламан:\n"
-            "• 📊 KPI ва самарадорлик кўрсаткичлари\n"
-            "• 💰 Бонус ва мукофотлар\n"
-            "• 🏖️ Таътил ва бўшлиқлар\n"
-            "• 📋 Интизомий чоралар\n"
-            "• 🏆 Эътироф тизими\n"
-            "• 📚 Ўқув курслар\n"
-            "• 📄 Сиёсат ва регламентлар\n\n"
-            "Аниқ саволингизни ёзинг!"
-        )
+    # ---------- Policy ----------
+
+    def _policy_search(self, message, policies, lang):
+        if not policies:
+            if lang == "uz":
+                return "Сўровингиз бўйича ҳужжат топилмади. Бошқа калит сўзларни ишлатиб кўринг ёки HR бўлимига мурожаат қилинг."
+            return "По вашему запросу документов не найдено. Попробуйте другие ключевые слова или обратитесь в HR."
+
+        if lang == "uz":
+            response = f"Топилган ҳужжатлар ({len(policies)}):\n\n"
+            for p in policies[:3]:
+                response += f"• **{p.get('title')}** ({p.get('code', '')})\n"
+                summary = p.get("summary", "")
+                if summary:
+                    response += f"  {summary[:80]}\n"
+            response += "\nБатафсилроқ маълумот керакми?"
+        else:
+            response = f"Найдено документов: {len(policies)}\n\n"
+            for p in policies[:3]:
+                response += f"• **{p.get('title')}** ({p.get('code', '')})\n"
+                summary = p.get("summary", "")
+                if summary:
+                    response += f"  {summary[:80]}\n"
+            response += "\nНужна более подробная информация?"
+
+        return response
+
+    # ---------- General / Out of scope ----------
+
+    def _general(self, message, policies, lang):
+        if policies:
+            return self._policy_search(message, policies, lang)
+
+        if lang == "uz":
+            return "Мен HR масалалари бўйича ёрдам бераман: KPI, бонуслар, таътил, ўқув, сиёсатлар. Аниқроқ савол берсангиз, ёрдам берарман!"
+        return "Я помогаю по рабочим вопросам: KPI, бонусы, отпуск, обучение, внутренние правила. Задайте конкретный вопрос, и я постараюсь помочь!"
+
+    # ===================== Utils =====================
 
     def _extract_sources(self, policies: List[Dict]) -> List[Dict]:
-        """Извлечь источники для ответа"""
         return [
             {"title": p.get("title"), "code": p.get("code")}
             for p in policies[:3]
         ]
 
 
-# Экземпляры для использования в main.py
+# ============== Module-level instances ==============
 intent_detector = EmployeeIntentDetector()
 kpi_explainer = EmployeeKpiExplainer()
 recommendation_engine = EmployeeRecommendationEngine()

@@ -379,13 +379,15 @@ class AiGatewayService
 
         $patterns = [
             'greeting' => ['привет', 'здравствуй', 'добрый день', 'добрый вечер', 'салом', 'ассалому', 'hello', 'hi'],
-            'help' => ['помощь', 'помоги', 'что умеешь', 'что можешь', 'ёрдам', 'yordam', 'help'],
+            'smalltalk' => ['как дела', 'как ты', 'как жизнь', 'как настроен', 'что нового', 'қандайсиз', 'яхшимисиз'],
+            'capabilities' => ['что умеешь', 'что можешь', 'чем помо', 'возможности', 'нима қила олас', 'помощь', 'помоги', 'ёрдам', 'yordam', 'help'],
 
-            'leave_balance' => ['остаток отпуск', 'сколько дней', 'дней отпуска', 'таътил қолди', 'неча кун таътил'],
+            'kpi_improve' => ['как увеличить', 'как улучшить', 'как повысить', 'как поднять', 'план улучшен', 'что делать с kpi', 'яхшилаш', 'кўтариш'],
+            'kpi_explain' => ['почему kpi', 'почему низк', 'почему ниже', 'объясни kpi', 'разъясни', 'нега kpi паст', 'из-за чего kpi'],
+            'kpi_score' => ['kpi', 'кпи', 'показател', 'эффективност', 'результат', 'самарадорлик'],
+
+            'leave_balance' => ['остаток отпуск', 'сколько дней', 'дней отпуска', 'отпуск сколько остал', 'сколько остал', 'таътил қолди', 'неча кун таътил'],
             'leave_request' => ['отпуск', 'отгул', 'выходн', 'больничн', 'отсутств', 'таътил'],
-
-            'kpi_explain' => ['почему kpi', 'почему низк', 'объясни kpi', 'разъясни', 'нега kpi паст'],
-            'kpi_question' => ['kpi', 'кпи', 'показател', 'эффективност', 'результат', 'самарадорлик'],
 
             'bonus_inquiry' => ['бонус', 'премия', 'премии', 'мукофот', 'bonus'],
             'salary_question' => ['зарплат', 'оклад', 'маош', 'ойлик', 'salary'],
@@ -402,11 +404,13 @@ class AiGatewayService
 
         $priorityOrder = [
             'greeting',
-            'help',
+            'smalltalk',
+            'capabilities',
+            'kpi_improve',
+            'kpi_explain',
+            'kpi_score',
             'leave_balance',
             'leave_request',
-            'kpi_explain',
-            'kpi_question',
             'discipline_question',
             'recognition_question',
             'bonus_inquiry',
@@ -443,7 +447,7 @@ class AiGatewayService
             'policies' => [],
         ];
 
-        if (in_array($intent, ['kpi_question', 'kpi_explain', 'bonus_inquiry', 'salary_question'], true)) {
+        if (in_array($intent, ['kpi_score', 'kpi_explain', 'kpi_improve', 'bonus_inquiry', 'salary_question'], true)) {
             $kpiSnapshot = $this->kpiClient->getOrFetchSnapshot($employee, 'month');
 
             if ($kpiSnapshot) {
