@@ -58,9 +58,15 @@ class AiGatewayService
             'message' => $message,
             'intent' => $intent,
             'history' => $this->normalizeHistoryForAi($conversation->getMessagesForAi(10)),
-            'facts' => $context['facts'] ?? [],
-            'policies' => $context['policies'] ?? [],
         ];
+
+        if (!empty($context['facts']) && is_array($context['facts']) && !array_is_list($context['facts'])) {
+            $payload['facts'] = $context['facts'];
+        }
+
+        if (!empty($context['policies'])) {
+            $payload['policies'] = $context['policies'];
+        }
 
         $log = IntegrationLog::logRequest(
             IntegrationType::AiServer,
@@ -91,7 +97,7 @@ class AiGatewayService
 
                 return $this->handleError(
                     $conversation,
-                    $this->resolveAiErrorMessage($response->status(), 'chat')
+                    $this->resolveAiErrorMessage($response->status())
                 );
             }
 
@@ -134,7 +140,7 @@ class AiGatewayService
                 'payload' => $payload,
             ]);
 
-            return $this->handleError($conversation, 'Превышено время ожидания ответа');
+            return $this->handleError($conversation, 'Превышено время ожидания ответа. Пожалуйста, попробуйте ещё раз.');
         } catch (\Throwable $e) {
             $durationMs = (int) ((microtime(true) - $startTime) * 1000);
             $log->markError($e->getMessage(), $durationMs);
@@ -144,7 +150,7 @@ class AiGatewayService
                 'payload' => $payload,
             ]);
 
-            return $this->handleError($conversation, 'Произошла ошибка при обработке запроса');
+            return $this->handleError($conversation, 'Произошла ошибка при обработке запроса. Пожалуйста, попробуйте позже.');
         }
     }
 
@@ -194,7 +200,7 @@ class AiGatewayService
 
                 return [
                     'success' => false,
-                    'error' => $this->resolveAiErrorMessage($response->status(), 'explain'),
+                    'error' => $this->resolveAiErrorMessage($response->status()),
                 ];
             }
 
@@ -284,7 +290,7 @@ class AiGatewayService
 
                 return [
                     'success' => false,
-                    'error' => $this->resolveAiErrorMessage($response->status(), 'analyze'),
+                    'error' => $this->resolveAiErrorMessage($response->status()),
                 ];
             }
 
@@ -395,12 +401,19 @@ class AiGatewayService
         ];
 
         $priorityOrder = [
-            'greeting', 'help',
-            'leave_balance', 'leave_request',
-            'kpi_explain', 'kpi_question',
-            'discipline_question', 'recognition_question',
-            'bonus_inquiry', 'salary_question',
-            'training_question', 'schedule_question', 'benefits_question',
+            'greeting',
+            'help',
+            'leave_balance',
+            'leave_request',
+            'kpi_explain',
+            'kpi_question',
+            'discipline_question',
+            'recognition_question',
+            'bonus_inquiry',
+            'salary_question',
+            'training_question',
+            'schedule_question',
+            'benefits_question',
             'policy_search',
         ];
 
@@ -466,7 +479,7 @@ class AiGatewayService
 
             $context['facts']['discipline'] = [
                 'active_count' => $disciplineActions->count(),
-                'actions' => $disciplineActions->map(fn ($a) => [
+                'actions' => $disciplineActions->map(fn($a) => [
                     'type' => $a->type_label,
                     'status' => $a->status_label,
                     'date' => $a->action_date->format('d.m.Y'),
@@ -530,6 +543,7 @@ class AiGatewayService
 
         return [
             ...$kpiData,
+            'total_score' => isset($kpiData['total_score']) ? (float) $kpiData['total_score'] : 0.0,
             'metrics' => $metrics,
             'low_metrics' => $lowMetrics,
         ];
@@ -554,11 +568,20 @@ class AiGatewayService
                 ?? $metricValue['percent']
                 ?? 0;
 
-            return [
+            $result = [
                 ...$metricValue,
                 'name' => $metricValue['name'] ?? $this->makeMetricName($metricKey),
                 'completion' => (float) $completion,
             ];
+
+            // Ensure all numeric fields are floats (prevents str vs int errors in Python)
+            foreach (['value', 'target', 'weight'] as $numField) {
+                if (isset($result[$numField])) {
+                    $result[$numField] = is_numeric($result[$numField]) ? (float) $result[$numField] : 0.0;
+                }
+            }
+
+            return $result;
         }
 
         return [
@@ -575,12 +598,13 @@ class AiGatewayService
             ->toString();
     }
 
-    private function resolveAiErrorMessage(int $status, string $operation): string
+    private function resolveAiErrorMessage(int $status): string
     {
         return match ($status) {
-            400, 422 => "AI вернул ошибку валидации для {$operation}",
-            500, 502, 503, 504 => 'AI сервис временно недоступен',
-            default => 'Ошибка при обращении к AI',
+            400, 422 => 'Не удалось обработать запрос. Попробуйте переформулировать вопрос.',
+            429 => 'Слишком много запросов. Подождите немного и попробуйте снова.',
+            500, 502, 503, 504 => 'AI сервис временно недоступен. Попробуйте через несколько минут.',
+            default => 'Произошла ошибка при обращении к AI. Попробуйте позже.',
         };
     }
 
@@ -612,6 +636,23 @@ class AiGatewayService
                     'content' => (string) ($item['content'] ?? ''),
                 ];
             })
+            ->filter(function ($item) {
+                // Remove empty messages
+                if (empty(trim($item['content']))) {
+                    return false;
+                }
+                // Remove error assistant messages to avoid polluting AI context
+                if ($item['role'] === 'assistant' && (
+                    str_contains($item['content'], 'произошла ошибка') ||
+                    str_contains($item['content'], 'Произошла ошибка') ||
+                    str_contains($item['content'], 'временно недоступен') ||
+                    str_contains($item['content'], 'Превышено время') ||
+                    str_contains($item['content'], 'Не удалось обработать')
+                )) {
+                    return false;
+                }
+                return true;
+            })
             ->values()
             ->toArray();
     }
@@ -620,7 +661,7 @@ class AiGatewayService
     {
         $message = $conversation->addMessage(
             'assistant',
-            "Извините, произошла ошибка: {$errorMessage}. Пожалуйста, попробуйте позже или обратитесь в HR отдел.",
+            $errorMessage,
             'error',
             ['error' => true]
         );

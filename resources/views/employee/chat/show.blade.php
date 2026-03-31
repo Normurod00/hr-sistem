@@ -208,11 +208,15 @@
 
             typingIndicator.classList.add('d-none');
 
-            if (data.success && data.response) {
+            if (data.response) {
                 addMessage('assistant', data.response, data.intent);
-                lastMessageId = data.message?.id || lastMessageId;
+            } else if (data.error) {
+                addMessage('assistant', data.error);
             } else {
                 addMessage('assistant', 'Извините, произошла ошибка. Попробуйте ещё раз.');
+            }
+            if (data.message?.id) {
+                lastMessageId = data.message.id;
             }
         } catch (error) {
             typingIndicator.classList.add('d-none');

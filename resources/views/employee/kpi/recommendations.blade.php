@@ -186,9 +186,9 @@
                 <div class="card border-0 shadow-sm">
                     <div class="card-body text-center py-5">
                         <i class="bi bi-exclamation-triangle fs-1 text-warning d-block mb-3"></i>
-                        <h5>AI-сервер недоступен</h5>
+                        <h5>Не удалось получить рекомендации</h5>
                         <p class="text-muted mb-0">
-                            Не удалось получить рекомендации. Попробуйте позже.
+                            {{ $aiError }}
                         </p>
                     </div>
                 </div>

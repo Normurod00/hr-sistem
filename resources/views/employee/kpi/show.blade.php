@@ -282,10 +282,11 @@
                     ` : ''}
                 `;
             } else {
+                const errorMsg = data.error || 'AI-сервер временно недоступен. Попробуйте позже.';
                 content.innerHTML = `
                     <div class="alert alert-warning mb-0">
                         <i class="bi bi-exclamation-triangle me-2"></i>
-                        AI-сервер временно недоступен. Попробуйте позже.
+                        ${escapeHtml(errorMsg)}
                     </div>`;
             }
         } catch (e) {
