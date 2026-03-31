@@ -26,7 +26,7 @@ executor = ThreadPoolExecutor(max_workers=4)
 # Добавляем путь к модулям
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from core.document_parser import DocumentParser
+from core.document_parser import DocumentParser, sanitize_extracted_text
 from core.rule_based_analyzer import RuleBasedAnalyzer
 from core.employee_endpoints import router as employee_router
 from core.models import (
@@ -165,7 +165,12 @@ async def parse_resume(request: Request, parse_request: ParseResumeRequest):
     опытом, образованием и контактной информацией.
     """
     try:
-        profile = hr_analyzer.parse_resume(parse_request.text)
+        # Санитизация входного текста
+        clean_text = sanitize_extracted_text(parse_request.text)
+        if not clean_text or len(clean_text.strip()) < 50:
+            return ParseResumeResponse(success=False, error="Текст резюме слишком короткий или пустой после очистки")
+
+        profile = hr_analyzer.parse_resume(clean_text)
         return ParseResumeResponse(
             success=True,
             profile=profile
@@ -218,7 +223,7 @@ async def upload_resume(file: UploadFile = File(...)):
     Поддерживаемые форматы: PDF, DOCX, DOC, TXT, RTF
     Максимальный размер: 10 MB
     """
-    # Валидация
+    # Валидация имени и размера
     is_valid, error = doc_parser.validate_file(file.filename, file.size or 0)
     if not is_valid:
         return ParseResumeResponse(success=False, error=error)
@@ -227,7 +232,15 @@ async def upload_resume(file: UploadFile = File(...)):
         # Читаем файл
         content = await file.read()
 
-        # Парсим
+        # Ограничение размера (дополнительно, на случай если file.size не указан)
+        max_size = doc_parser.max_file_size
+        if len(content) > max_size:
+            return ParseResumeResponse(
+                success=False,
+                error=f"Файл слишком большой (макс. {max_size // 1024 // 1024} MB)"
+            )
+
+        # Парсим (включает проверку безопасности и санитизацию)
         text, error = doc_parser.parse_bytes(content, file.filename)
         if error:
             return ParseResumeResponse(success=False, error=error)

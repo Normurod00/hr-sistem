@@ -9,8 +9,13 @@ server:
     - "http://localhost"
     - "http://127.0.0.1"
     - "http://204.168.217.54"
+    - "https://204.168.217.54"
     - "http://app"
     - "http://hr-app"
+    - "http://hr-brb"
+    - "http://localhost:8000"
+    - "http://127.0.0.1:8000"
+    - "*"
 
 # LLM Configuration
 llm:

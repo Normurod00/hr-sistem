@@ -85,7 +85,7 @@ class AnalyzeApplication implements ShouldQueue
             $this->application->id
         );
 
-        if (!$result['success']) {
+        if (!($result['success'] ?? false)) {
             Log::error('AnalyzeApplication: ошибка AI-анализа', [
                 'application_id' => $this->application->id,
                 'error' => $result['error'] ?? 'Unknown error',

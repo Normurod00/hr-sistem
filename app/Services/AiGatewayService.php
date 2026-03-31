@@ -22,8 +22,15 @@ class AiGatewayService
         private readonly KpiClient $kpiClient,
         private readonly PolicySearchService $policyService
     ) {
-        $this->aiUrl = rtrim(config('ai.url', 'http://127.0.0.1:8095'), '/');
-        $this->timeout = (int) config('ai.timeout', 120);
+        $url = config('ai.url') ?: config('ai.server.url');
+
+        if (empty($url)) {
+            Log::error('AiGatewayService: HR_AI_URL не настроен в .env');
+            $url = 'http://127.0.0.1:8095';
+        }
+
+        $this->aiUrl = rtrim($url, '/');
+        $this->timeout = (int) config('ai.timeout', config('ai.server.timeout', 120));
     }
 
     /**

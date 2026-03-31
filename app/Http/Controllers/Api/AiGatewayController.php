@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\EmployeeAiConversation;
 use App\Services\AiGatewayService;
 use App\Services\Employee\EmployeeKpiService;
+use App\Services\InputSanitizer;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -31,10 +32,16 @@ class AiGatewayController extends Controller
     {
         $validated = $request->validate([
             'context_type' => 'required|string|in:candidate,employee',
-            'message' => 'required|string|max:4000',
+            'message' => 'required|string|min:1|max:4000',
             'conversation_id' => 'nullable|integer',
             'employee_context' => 'nullable|string|in:' . implode(',', AiContextType::values()),
         ]);
+
+        $validated['message'] = InputSanitizer::sanitizeMessage($validated['message']);
+
+        if (empty($validated['message'])) {
+            return response()->json(['success' => false, 'error' => 'Сообщение не может быть пустым'], 422);
+        }
 
         // Определяем тип контекста
         if ($validated['context_type'] === 'employee') {
@@ -157,16 +164,12 @@ class AiGatewayController extends Controller
 
     private function handleCandidateChat(Request $request, array $validated): JsonResponse
     {
-        // Используем существующий AiClient для кандидатов
-        $aiClient = app(\App\Services\AiClient::class);
-
-        // Формируем запрос в формате существующего сервиса
-        $response = $aiClient->chat([
-            'message' => $validated['message'],
-            'context' => ['type' => 'candidate'],
-        ]);
-
-        return response()->json($response);
+        // Кандидатский AI-чат не поддерживается через этот endpoint.
+        // Для кандидатов используются /parse-resume, /analyze, /match-score напрямую.
+        return response()->json([
+            'success' => false,
+            'error' => 'Чат для кандидатов недоступен. Используйте специализированные эндпоинты для анализа резюме.',
+        ], 400);
     }
 
     private function handleEmployeeAnalysis(Request $request, array $validated): JsonResponse
@@ -189,9 +192,28 @@ class AiGatewayController extends Controller
 
     private function handleCandidateAnalysis(Request $request, array $validated): JsonResponse
     {
-        // Перенаправляем к существующим сервисам для кандидатов
         $aiClient = app(\App\Services\AiClient::class);
 
-        return response()->json($aiClient->analyze($validated['data']));
+        $data = $validated['data'];
+
+        if ($validated['operation'] === 'resume_analysis') {
+            $result = $aiClient->analyzeCandidate(
+                $data['profile'] ?? [],
+                $data['vacancy'] ?? [],
+                $data['application_id'] ?? null
+            );
+            return response()->json($result);
+        }
+
+        if ($validated['operation'] === 'match_score') {
+            $result = $aiClient->calculateMatchScore(
+                $data['profile'] ?? [],
+                $data['vacancy'] ?? [],
+                $data['application_id'] ?? null
+            );
+            return response()->json($result);
+        }
+
+        return response()->json(['error' => 'Unknown operation'], 400);
     }
 }

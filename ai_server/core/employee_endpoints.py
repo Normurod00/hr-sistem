@@ -5,17 +5,22 @@ Employee API Endpoints - Эндпоинты для сотрудников
 Включается в main.py
 """
 
+import re
 import logging
 from typing import List, Dict, Any, Optional
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
-from .employee_module import (
-    chat_handler,
-    kpi_explainer,
-    recommendation_engine,
-    EmployeeIntent,
-)
+try:
+    from .employee_module import (
+        chat_handler,
+        kpi_explainer,
+        recommendation_engine,
+        EmployeeIntent,
+    )
+except Exception as e:
+    logging.getLogger(__name__).error(f"Failed to initialize employee module: {e}")
+    raise
 
 logger = logging.getLogger(__name__)
 
@@ -118,18 +123,31 @@ async def employee_chat(request: EmployeeChatRequest):
     - Релевантных политик
     """
     try:
-        logger.info(f"Employee chat request: {request.message[:50]}...")
+        # Санитизация сообщения
+        message = request.message.strip()
+        message = re.sub(r'<[^>]+>', '', message)  # Удаляем HTML теги
+        message = message.replace('\x00', '')  # Удаляем null bytes
+
+        if not message:
+            return EmployeeChatResponse(
+                response="Пожалуйста, введите сообщение.",
+                intent="general",
+                confidence=1.0,
+                sources=[],
+            )
+
+        logger.info(f"Employee chat request: {message[:50]}...")
 
         # Конвертируем history в нужный формат
         history = [{"role": m.role, "content": m.content} for m in request.history]
 
         # Конвертируем policies в нужный формат
-        policies = [p.dict() for p in request.policies]
+        policies = [p.model_dump() for p in request.policies]
 
         # Обрабатываем через chat_handler
         result = chat_handler.handle_chat(
-            message=request.message,
-            context=request.context.dict(),
+            message=message,
+            context=request.context.model_dump(),
             history=history,
             facts=request.facts,
             policies=policies,
@@ -144,7 +162,7 @@ async def employee_chat(request: EmployeeChatRequest):
 
     except Exception as e:
         logger.error(f"Employee chat error: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка обработки сообщения")
 
 
 @router.post("/explain", response_model=KpiExplainResponse)
@@ -163,11 +181,20 @@ async def explain_kpi(request: KpiExplainRequest):
 
         # Извлекаем низкие метрики если не переданы
         kpi_data = request.kpi_data.copy()
+
+        # Нормализуем метрики — гарантируем что каждая метрика имеет completion
+        metrics = kpi_data.get("metrics", {})
+        for key, val in metrics.items():
+            if isinstance(val, dict) and "completion" not in val:
+                val["completion"] = val.get("score", val.get("value", val.get("current", val.get("percent", 0))))
+            if isinstance(val, (int, float)):
+                metrics[key] = {"name": key.replace("_", " ").title(), "completion": float(val)}
+        kpi_data["metrics"] = metrics
+
         if "low_metrics" not in kpi_data:
-            metrics = kpi_data.get("metrics", {})
             low_metrics = {
                 k: v for k, v in metrics.items()
-                if v.get("completion", 100) < 70
+                if isinstance(v, dict) and v.get("completion", 100) < 70
             }
             kpi_data["low_metrics"] = low_metrics
 
@@ -182,7 +209,7 @@ async def explain_kpi(request: KpiExplainRequest):
 
     except Exception as e:
         logger.error(f"KPI explain error: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Ошибка при объяснении KPI")
 
 
 @router.post("/analyze", response_model=RecommendationsResponse)
@@ -200,11 +227,20 @@ async def analyze_and_recommend(request: RecommendationsRequest):
 
         # Извлекаем низкие метрики
         kpi_data = request.kpi_data.copy()
+
+        # Нормализуем метрики
+        metrics = kpi_data.get("metrics", {})
+        for key, val in metrics.items():
+            if isinstance(val, dict) and "completion" not in val:
+                val["completion"] = val.get("score", val.get("value", val.get("current", val.get("percent", 0))))
+            if isinstance(val, (int, float)):
+                metrics[key] = {"name": key.replace("_", " ").title(), "completion": float(val)}
+        kpi_data["metrics"] = metrics
+
         if "low_metrics" not in kpi_data:
-            metrics = kpi_data.get("metrics", {})
             low_metrics = {
                 k: v for k, v in metrics.items()
-                if v.get("completion", 100) < 90
+                if isinstance(v, dict) and v.get("completion", 100) < 90
             }
             kpi_data["low_metrics"] = low_metrics
 
@@ -244,7 +280,7 @@ async def analyze_and_recommend(request: RecommendationsRequest):
 
     except Exception as e:
         logger.error(f"Recommendations error: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Ошибка при генерации рекомендаций")
 
 
 # ============== Health Endpoint ==============

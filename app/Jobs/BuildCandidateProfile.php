@@ -47,7 +47,7 @@ class BuildCandidateProfile implements ShouldQueue
             $this->application->id
         );
 
-        if (!$result['success']) {
+        if (!($result['success'] ?? false)) {
             Log::error('BuildCandidateProfile: ошибка парсинга резюме', [
                 'application_id' => $this->application->id,
                 'error' => $result['error'] ?? 'Unknown error',

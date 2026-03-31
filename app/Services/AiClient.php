@@ -18,10 +18,17 @@ class AiClient
 
     public function __construct()
     {
-        $this->baseUrl = rtrim(config('ai.server.url'), '/');
+        $url = config('ai.server.url');
+
+        if (empty($url)) {
+            Log::error('AiClient: HR_AI_URL не настроен в .env');
+            $url = 'http://127.0.0.1:8095';
+        }
+
+        $this->baseUrl = rtrim($url, '/');
         $this->timeout = config('ai.server.timeout', 120);
         $this->cacheEnabled = config('ai.cache.enabled', true);
-        $this->cacheTtl = config('ai.cache.ttl', 3600); // 1 час по умолчанию
+        $this->cacheTtl = config('ai.cache.ttl', 3600);
     }
 
     /**

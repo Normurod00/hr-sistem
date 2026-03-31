@@ -501,8 +501,8 @@ class EmployeeChatHandler:
             EmployeeIntent.SALARY_QUESTION: lambda: self._handle_salary_question(context),
             EmployeeIntent.LEAVE_BALANCE: lambda: self._handle_leave_balance(context),
             EmployeeIntent.LEAVE_REQUEST: lambda: self._handle_leave_request(policies),
-            EmployeeIntent.DISCIPLINE_QUESTION: lambda: self._handle_discipline_question(context),
-            EmployeeIntent.RECOGNITION_QUESTION: lambda: self._handle_recognition_question(context),
+            EmployeeIntent.DISCIPLINE_QUESTION: lambda: self._handle_discipline_question(context, facts),
+            EmployeeIntent.RECOGNITION_QUESTION: lambda: self._handle_recognition_question(context, facts),
             EmployeeIntent.TRAINING_QUESTION: lambda: self._handle_training_question(context),
             EmployeeIntent.SCHEDULE_QUESTION: lambda: self._handle_schedule_question(context),
             EmployeeIntent.BENEFITS_QUESTION: lambda: self._handle_benefits_question(context),
@@ -709,27 +709,48 @@ class EmployeeChatHandler:
             "Маош карта орқали ўтказилади."
         )
 
-    def _handle_discipline_question(self, context: Dict) -> str:
+    def _handle_discipline_question(self, context: Dict, facts: Dict = None) -> str:
         """Вопросы о дисциплине"""
-        return (
-            "📋 **Интизомий чоралар тўғрисида**\n\n"
+        facts = facts or {}
+        discipline = facts.get("discipline", {})
+
+        response = "📋 **Интизомий чоралар тўғрисида**\n\n"
+
+        # Показываем реальные данные если есть
+        active_count = discipline.get("active_count", 0)
+        if active_count > 0:
+            response += f"⚠️ Сизда {active_count} та фаол интизомий чора мавжуд:\n\n"
+            for action in discipline.get("actions", []):
+                response += f"• {action.get('type', 'N/A')} — {action.get('date', 'N/A')} ({action.get('status', 'N/A')})\n"
+            response += "\n"
+        elif discipline:
+            response += "✅ Сизда фаол интизомий чоралар йўқ.\n\n"
+
+        response += (
             "Интизомий чоралар турлари:\n"
             "• ⚠️ Огоҳлантириш - енгил бузилишлар\n"
             "• 📝 Ҳайфсан - ўртача бузилишлар\n"
             "• 💰 Жарима - молиявий жазо\n"
             "• 🚫 Ишдан четлатиш - жиддий бузилишлар\n\n"
-            "Сизга тегишли интизомий чораларни кўриш учун:\n"
-            "👉 Портал → 'Интизом' бўлими\n\n"
             "Шикоят қилиш:\n"
             "• Шикоят муддати - 10 иш куни\n"
             "• Шикоят матни камида 50 та белги\n\n"
-            "Саволлар бўлса, HR бўлимига мурожаат қилинг."
+            "Тафсилотлар учун: Портал → 'Интизом' бўлими"
         )
+        return response
 
-    def _handle_recognition_question(self, context: Dict) -> str:
+    def _handle_recognition_question(self, context: Dict, facts: Dict = None) -> str:
         """Вопросы о признании"""
-        return (
-            "🏆 **Эътироф тизими**\n\n"
+        facts = facts or {}
+        recognition = facts.get("recognition", {})
+        total_points = recognition.get("total_points", 0)
+
+        response = "🏆 **Эътироф тизими**\n\n"
+
+        if total_points > 0:
+            response += f"⭐ Сизнинг жами баллингиз: {total_points}\n\n"
+
+        response += (
             "BRB Bank ходимларни қўллаб-қувватлайди!\n\n"
             "Эътироф турлари:\n"
             "• ⭐ Ой ходими\n"
@@ -742,6 +763,7 @@ class EmployeeChatHandler:
             "👉 'Менинг балларим' бўлими\n\n"
             "Ҳамкасбларингизни мукофотланг!"
         )
+        return response
 
     def _handle_training_question(self, context: Dict) -> str:
         """Вопросы об обучении"""

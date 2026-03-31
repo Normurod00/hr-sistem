@@ -6,6 +6,7 @@ use App\Enums\AiContextType;
 use App\Http\Controllers\Controller;
 use App\Models\EmployeeAiConversation;
 use App\Services\AiGatewayService;
+use App\Services\InputSanitizer;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -58,10 +59,20 @@ class EmployeeChatController extends Controller
     {
         $validated = $request->validate([
             'context_type' => 'required|string|in:' . implode(',', AiContextType::values()),
-            'message' => 'required|string|max:2000',
+            'message' => 'required|string|min:1|max:2000',
         ]);
 
+        $validated['message'] = InputSanitizer::sanitizeMessage($validated['message']);
+
+        if (empty($validated['message'])) {
+            return response()->json(['success' => false, 'error' => 'Сообщение не может быть пустым'], 422);
+        }
+
         $employee = auth()->user()->employeeProfile;
+
+        if (!$employee) {
+            return response()->json(['success' => false, 'error' => 'Профиль сотрудника не найден'], 403);
+        }
 
         // Создаём новый разговор
         $conversation = $employee->aiConversations()->create([
@@ -92,9 +103,19 @@ class EmployeeChatController extends Controller
     {
         $this->authorizeConversation($conversation);
 
+        if ($conversation->status->value !== 'active') {
+            return response()->json(['success' => false, 'error' => 'Разговор закрыт'], 400);
+        }
+
         $validated = $request->validate([
-            'message' => 'required|string|max:2000',
+            'message' => 'required|string|min:1|max:2000',
         ]);
+
+        $validated['message'] = InputSanitizer::sanitizeMessage($validated['message']);
+
+        if (empty($validated['message'])) {
+            return response()->json(['success' => false, 'error' => 'Сообщение не может быть пустым'], 422);
+        }
 
         $employee = auth()->user()->employeeProfile;
 
