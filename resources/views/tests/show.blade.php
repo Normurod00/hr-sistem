@@ -550,10 +550,14 @@
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'Accept': 'application/json',
                 'X-CSRF-TOKEN': csrfToken
             }
         })
-        .then(res => res.json())
+        .then(res => {
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            return res.json();
+        })
         .then(data => {
             if (data.success) {
                 questions = data.questions;
@@ -573,8 +577,8 @@
             }
         })
         .catch(err => {
-            console.error(err);
-            alert('Ошибка соединения');
+            console.error('Start test error:', err);
+            alert('Не удалось начать тест. Обновите страницу и попробуйте снова.');
             btn.disabled = false;
             btn.innerHTML = '<i class="bi bi-play-fill"></i> Начать тест';
         });
@@ -732,11 +736,15 @@
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'Accept': 'application/json',
                 'X-CSRF-TOKEN': csrfToken
             },
             body: JSON.stringify({ answers })
         })
-        .then(res => res.json())
+        .then(res => {
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            return res.json();
+        })
         .then(data => {
             if (data.success) {
                 window.location.href = `/tests/${applicationId}/results`;
@@ -746,8 +754,8 @@
             }
         })
         .catch(err => {
-            console.error(err);
-            alert('Ошибка соединения');
+            console.error('Submit test error:', err);
+            alert('Не удалось отправить результаты. Обновите страницу и попробуйте снова.');
             document.getElementById('loadingOverlay').style.display = 'none';
         });
     }

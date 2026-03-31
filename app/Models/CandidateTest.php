@@ -131,16 +131,18 @@ class CandidateTest extends Model
         $correctCount = 0;
 
         foreach ($answers as $index => $answer) {
+            $index = (int) $index;
             if (isset($questions[$index])) {
                 $questions[$index]['user_answer'] = $answer;
 
-                if ($answer === $questions[$index]['correct_answer']) {
+                if ($answer == $questions[$index]['correct_answer']) {
                     $correctCount++;
                 }
             }
         }
 
-        $score = round(($correctCount / $this->total_questions) * 100);
+        $total = $this->total_questions ?: count($questions) ?: 1;
+        $score = round(($correctCount / $total) * 100);
 
         $this->update([
             'questions' => $questions,

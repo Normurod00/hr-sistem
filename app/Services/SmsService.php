@@ -15,24 +15,33 @@ class SmsService
      */
     public function sendStatusNotification(Application $application, ApplicationStatus $newStatus): ?SmsNotification
     {
-        $phone = $application->candidate->phone;
+        $application->loadMissing(['candidate', 'vacancy']);
+
+        $phone = $application->candidate?->phone;
+        $userId = $application->user_id; // ВАЖНО: sms_notifications.user_id -> users.id
 
         if (!$phone) {
             Log::warning('Cannot send SMS: candidate has no phone', [
                 'application_id' => $application->id,
-                'candidate_id' => $application->user_id,
+                'user_id' => $application->user_id,
             ]);
             return null;
         }
 
-        // Формируем сообщение в зависимости от статуса
+        if (!$userId) {
+            Log::warning('Cannot send SMS: application user_id is null', [
+                'application_id' => $application->id,
+            ]);
+            return null;
+        }
+
         $message = $this->buildStatusMessage($application, $newStatus);
 
         if (!$message) {
-            return null; // Не отправляем SMS для некоторых статусов
+            return null;
         }
 
-        return $this->send($phone, $message, 'status_change', $application->id);
+        return $this->send($phone, $message, 'status_change', $application->id, $userId);
     }
 
     /**
@@ -40,15 +49,29 @@ class SmsService
      */
     public function sendTestReminder(Application $application): ?SmsNotification
     {
-        $phone = $application->candidate->phone;
+        $application->loadMissing(['candidate', 'vacancy']);
+
+        $phone = $application->candidate?->phone;
+        $userId = $application->user_id;
 
         if (!$phone) {
+            Log::warning('Cannot send test reminder: candidate has no phone', [
+                'application_id' => $application->id,
+                'user_id' => $application->user_id,
+            ]);
+            return null;
+        }
+
+        if (!$userId) {
+            Log::warning('Cannot send test reminder: application user_id is null', [
+                'application_id' => $application->id,
+            ]);
             return null;
         }
 
         $message = "Напоминание: у вас есть незавершённый тест для вакансии \"{$application->vacancy->title}\". Пройдите его в личном кабинете.";
 
-        return $this->send($phone, $message, 'test_reminder', $application->id);
+        return $this->send($phone, $message, 'test_reminder', $application->id, $userId);
     }
 
     /**
@@ -56,9 +79,23 @@ class SmsService
      */
     public function sendInterviewInvite(Application $application, string $datetime, ?string $meetingLink = null): ?SmsNotification
     {
-        $phone = $application->candidate->phone;
+        $application->loadMissing(['candidate', 'vacancy']);
+
+        $phone = $application->candidate?->phone;
+        $userId = $application->user_id;
 
         if (!$phone) {
+            Log::warning('Cannot send interview invite: candidate has no phone', [
+                'application_id' => $application->id,
+                'user_id' => $application->user_id,
+            ]);
+            return null;
+        }
+
+        if (!$userId) {
+            Log::warning('Cannot send interview invite: application user_id is null', [
+                'application_id' => $application->id,
+            ]);
             return null;
         }
 
@@ -68,51 +105,63 @@ class SmsService
             $message .= " Ссылка: {$meetingLink}";
         }
 
-        return $this->send($phone, $message, 'interview_invite', $application->id);
+        return $this->send($phone, $message, 'interview_invite', $application->id, $userId);
     }
 
     /**
      * Основной метод отправки SMS
      */
-    public function send(string $phone, string $message, string $type = 'general', ?int $applicationId = null): SmsNotification
-    {
-        // Нормализуем номер телефона
+    public function send(
+        string $phone,
+        string $message,
+        string $type = 'general',
+        ?int $applicationId = null,
+        ?int $userId = null
+    ): ?SmsNotification {
         $phone = $this->normalizePhone($phone);
 
-        // Создаём запись в БД
+        if (!$userId) {
+            Log::error('SMS create skipped: user_id is null', [
+                'application_id' => $applicationId,
+                'phone' => $phone,
+                'type' => $type,
+            ]);
+            return null;
+        }
+
         $notification = SmsNotification::create([
+            'user_id' => $userId,
             'application_id' => $applicationId,
             'phone' => $phone,
             'message' => $message,
             'type' => $type,
-            'status' => 'pending',
+            'status' => SmsNotification::STATUS_PENDING,
         ]);
 
         try {
-            // Пытаемся отправить SMS через провайдера
             $result = $this->sendViaProvider($phone, $message);
 
-            if ($result['success']) {
+            if (($result['success'] ?? false) === true) {
                 $notification->update([
-                    'status' => 'sent',
+                    'status' => SmsNotification::STATUS_SENT,
                     'sent_at' => now(),
-                    'provider_response' => $result['response'] ?? null,
                 ]);
             } else {
                 $notification->update([
-                    'status' => 'failed',
+                    'status' => SmsNotification::STATUS_FAILED,
                     'error_message' => $result['error'] ?? 'Unknown error',
-                    'provider_response' => $result['response'] ?? null,
                 ]);
             }
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             Log::error('SMS send failed', [
+                'application_id' => $applicationId,
+                'user_id' => $userId,
                 'phone' => $phone,
                 'error' => $e->getMessage(),
             ]);
 
             $notification->update([
-                'status' => 'failed',
+                'status' => SmsNotification::STATUS_FAILED,
                 'error_message' => $e->getMessage(),
             ]);
         }
@@ -130,14 +179,10 @@ class SmsService
 
         return match ($status) {
             ApplicationStatus::InReview => "Ваша заявка на вакансию \"{$vacancyTitle}\" в {$companyName} принята на рассмотрение.",
-
             ApplicationStatus::Invited => "Поздравляем! Вы приглашены на следующий этап отбора по вакансии \"{$vacancyTitle}\" в {$companyName}. Проверьте личный кабинет для деталей.",
-
             ApplicationStatus::Rejected => "К сожалению, ваша заявка на вакансию \"{$vacancyTitle}\" в {$companyName} отклонена. Спасибо за интерес к нашей компании.",
-
             ApplicationStatus::Hired => "Поздравляем! Вы приняты на должность \"{$vacancyTitle}\" в {$companyName}! Свяжитесь с HR для оформления.",
-
-            default => null, // Для других статусов не отправляем SMS
+            default => null,
         };
     }
 
@@ -146,17 +191,13 @@ class SmsService
      */
     private function normalizePhone(string $phone): string
     {
-        // Удаляем все символы кроме цифр и +
         $phone = preg_replace('/[^0-9+]/', '', $phone);
 
-        // Если начинается с 8, заменяем на +7 (для России/СНГ)
         if (str_starts_with($phone, '8') && strlen($phone) === 11) {
             $phone = '+7' . substr($phone, 1);
         }
 
-        // Если нет +, добавляем + в начало для международного формата
         if (!str_starts_with($phone, '+')) {
-            // Для Узбекистана
             if (strlen($phone) === 9 && (str_starts_with($phone, '9') || str_starts_with($phone, '7'))) {
                 $phone = '+998' . $phone;
             } elseif (strlen($phone) === 12 && str_starts_with($phone, '998')) {
@@ -169,12 +210,6 @@ class SmsService
 
     /**
      * Отправка через SMS провайдера
-     *
-     * Это абстрактный метод, который можно настроить под конкретного провайдера:
-     * - Eskiz.uz (для Узбекистана)
-     * - SMS.ru (для России)
-     * - Twilio (международный)
-     * - и др.
      */
     private function sendViaProvider(string $phone, string $message): array
     {
@@ -188,7 +223,7 @@ class SmsService
     }
 
     /**
-     * Eskiz.uz provider (популярный в Узбекистане)
+     * Eskiz.uz provider
      */
     private function sendViaEskiz(string $phone, string $message): array
     {
@@ -213,7 +248,7 @@ class SmsService
                 'response' => $response->json(),
                 'error' => $response->json('message'),
             ];
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             return [
                 'success' => false,
                 'error' => $e->getMessage(),
@@ -222,7 +257,7 @@ class SmsService
     }
 
     /**
-     * PlayMobile provider (для Узбекистана)
+     * PlayMobile provider
      */
     private function sendViaPlayMobile(string $phone, string $message): array
     {
@@ -241,7 +276,7 @@ class SmsService
                     'messages' => [
                         [
                             'recipient' => ltrim($phone, '+'),
-                            'message-id' => uniqid('sms_'),
+                            'message-id' => uniqid('sms_', true),
                             'sms' => [
                                 'originator' => $originator,
                                 'content' => [
@@ -257,7 +292,7 @@ class SmsService
                 'response' => $response->json(),
                 'error' => !$response->successful() ? 'HTTP ' . $response->status() : null,
             ];
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             return [
                 'success' => false,
                 'error' => $e->getMessage(),
@@ -266,7 +301,7 @@ class SmsService
     }
 
     /**
-     * Fallback: просто логируем SMS (для тестирования)
+     * Fallback: логируем SMS
      */
     private function logSms(string $phone, string $message): array
     {
