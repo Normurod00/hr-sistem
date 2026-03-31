@@ -1,7 +1,7 @@
 @extends('employee.layouts.app')
 
-@section('title', 'Эътироф тахтаси')
-@section('page-title', 'Эътироф тахтаси')
+@section('title', 'Система признания')
+@section('page-title', 'Система признания')
 
 @section('content')
 <style>
@@ -123,12 +123,12 @@
                     <i class="bi bi-trophy-fill"></i>
                 </div>
                 <div>
-                    <div class="stat-label">Ой номинациялари</div>
+                    <div class="stat-label">Номинации за месяц</div>
                     <div class="stat-value">{{ $stats['total_nominations_this_month'] }}</div>
                 </div>
             </div>
             <div class="text-muted small">
-                {{ $stats['approved_nominations_this_month'] }} та тасдиқланган
+                {{ $stats['approved_nominations_this_month'] }} подтверждённых
             </div>
         </div>
     </div>
@@ -140,12 +140,12 @@
                     <i class="bi bi-hourglass-split"></i>
                 </div>
                 <div>
-                    <div class="stat-label">Кутилмоқда</div>
+                    <div class="stat-label">Ожидание</div>
                     <div class="stat-value">{{ $stats['pending_nominations'] }}</div>
                 </div>
             </div>
             <div class="text-muted small">
-                Кўриб чиқилаётган номинациялар
+                Номинации на рассмотрении
             </div>
         </div>
     </div>
@@ -157,12 +157,12 @@
                     <i class="bi bi-people-fill"></i>
                 </div>
                 <div>
-                    <div class="stat-label">Фаол ходимлар</div>
+                    <div class="stat-label">Активные сотрудники</div>
                     <div class="stat-value">{{ $stats['active_employees'] }}</div>
                 </div>
             </div>
             <div class="text-muted small">
-                Баллга эга ходимлар
+                Сотрудники с баллами
             </div>
         </div>
     </div>
@@ -175,8 +175,8 @@
                         <i class="bi bi-plus-lg"></i>
                     </div>
                     <div>
-                        <div class="stat-label" style="color: rgba(255,255,255,0.8);">Янги номинация</div>
-                        <div class="stat-value">Номинация қилиш</div>
+                        <div class="stat-label" style="color: rgba(255,255,255,0.8);">Новая номинация</div>
+                        <div class="stat-value">Номинировать</div>
                     </div>
                 </div>
             </div>
@@ -190,7 +190,7 @@
     <div class="col-md-4">
         <div class="award-card gold">
             <div class="award-title">
-                <i class="bi bi-award-fill me-1"></i> Ой ходими
+                <i class="bi bi-award-fill me-1"></i> Сотрудник месяца
             </div>
             <div class="d-flex align-items-center gap-3 mt-3">
                 <div class="award-avatar">
@@ -207,11 +207,11 @@
     <div class="col-md-4">
         <div class="award-card" style="opacity: 0.6;">
             <div class="award-title">
-                <i class="bi bi-award-fill me-1"></i> Ой ходими
+                <i class="bi bi-award-fill me-1"></i> Сотрудник месяца
             </div>
             <div class="text-center mt-4">
                 <i class="bi bi-hourglass-split" style="font-size: 32px; opacity: 0.5;"></i>
-                <div class="mt-2" style="opacity: 0.7;">Ҳали танланмаган</div>
+                <div class="mt-2" style="opacity: 0.7;">Ещё не выбран</div>
             </div>
         </div>
     </div>
@@ -221,7 +221,7 @@
     <div class="col-md-4">
         <div class="award-card silver">
             <div class="award-title">
-                <i class="bi bi-trophy-fill me-1"></i> Квартал ходими
+                <i class="bi bi-trophy-fill me-1"></i> Сотрудник квартала
             </div>
             <div class="d-flex align-items-center gap-3 mt-3">
                 <div class="award-avatar">
@@ -238,11 +238,11 @@
     <div class="col-md-4">
         <div class="award-card silver" style="opacity: 0.6;">
             <div class="award-title">
-                <i class="bi bi-trophy-fill me-1"></i> Квартал ходими
+                <i class="bi bi-trophy-fill me-1"></i> Сотрудник квартала
             </div>
             <div class="text-center mt-4">
                 <i class="bi bi-hourglass-split" style="font-size: 32px; opacity: 0.5;"></i>
-                <div class="mt-2" style="opacity: 0.7;">Ҳали танланмаган</div>
+                <div class="mt-2" style="opacity: 0.7;">Ещё не выбран</div>
             </div>
         </div>
     </div>
@@ -252,7 +252,7 @@
     <div class="col-md-4">
         <div class="award-card bronze">
             <div class="award-title">
-                <i class="bi bi-gem me-1"></i> Йил ходими
+                <i class="bi bi-gem me-1"></i> Сотрудник года
             </div>
             <div class="d-flex align-items-center gap-3 mt-3">
                 <div class="award-avatar">
@@ -269,11 +269,11 @@
     <div class="col-md-4">
         <div class="award-card bronze" style="opacity: 0.6;">
             <div class="award-title">
-                <i class="bi bi-gem me-1"></i> Йил ходими
+                <i class="bi bi-gem me-1"></i> Сотрудник года
             </div>
             <div class="text-center mt-4">
                 <i class="bi bi-hourglass-split" style="font-size: 32px; opacity: 0.5;"></i>
-                <div class="mt-2" style="opacity: 0.7;">Ҳали танланмаган</div>
+                <div class="mt-2" style="opacity: 0.7;">Ещё не выбран</div>
             </div>
         </div>
     </div>
@@ -287,10 +287,10 @@
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">
                     <i class="bi bi-bar-chart-fill text-primary me-2"></i>
-                    Ой рейтинги
+                    Рейтинг за месяц
                 </h5>
                 <a href="{{ route('employee.recognition.leaderboard') }}" class="btn btn-sm btn-outline-primary">
-                    Ҳаммаси
+                    Все
                 </a>
             </div>
             <div class="card-body p-0">
@@ -306,7 +306,7 @@
                         <div class="leaderboard-name">{{ $item['user']->name ?? 'Unknown' }}</div>
                         <div class="leaderboard-dept">
                             <i class="bi bi-trophy-fill text-warning me-1"></i>
-                            {{ $item['awards_won'] }} мукофот
+                            {{ $item['awards_won'] }} наград
                         </div>
                     </div>
                     <div class="leaderboard-points">
@@ -317,7 +317,7 @@
                 @empty
                 <div class="text-center py-5 text-muted">
                     <i class="bi bi-inbox" style="font-size: 48px; opacity: 0.3;"></i>
-                    <div class="mt-2">Маълумот йўқ</div>
+                    <div class="mt-2">Нет данных</div>
                 </div>
                 @endforelse
             </div>
@@ -330,7 +330,7 @@
             <div class="card-header">
                 <h5 class="mb-0">
                     <i class="bi bi-stars text-warning me-2"></i>
-                    Номинация турлари
+                    Типы номинаций
                 </h5>
             </div>
             <div class="card-body">
@@ -351,7 +351,7 @@
                     </div>
                     @empty
                     <div class="col-12 text-center text-muted py-4">
-                        Номинация турлари мавжуд эмас
+                        Типы номинаций отсутствуют
                     </div>
                     @endforelse
                 </div>
@@ -366,10 +366,10 @@
     <div class="card-header d-flex justify-content-between align-items-center">
         <h5 class="mb-0">
             <i class="bi bi-clock-history text-info me-2"></i>
-            Охирги мукофотлар
+            Последние награды
         </h5>
         <a href="{{ route('employee.recognition.hall-of-fame') }}" class="btn btn-sm btn-outline-info">
-            Шон-шараф зали
+            Зал славы
         </a>
     </div>
     <div class="card-body">

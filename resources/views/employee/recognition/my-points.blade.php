@@ -1,7 +1,7 @@
 @extends('employee.layouts.app')
 
-@section('title', 'Менинг балларим')
-@section('page-title', 'Баллар тарихи')
+@section('title', 'Мои баллы')
+@section('page-title', 'История баллов')
 
 @section('content')
 <div class="row g-4 mb-4">
@@ -12,7 +12,7 @@
                     <i class="bi bi-coin"></i>
                 </div>
                 <div>
-                    <div class="stat-label">Жами баллар</div>
+                    <div class="stat-label">Всего баллов</div>
                     <div class="stat-value">{{ number_format($balance->total_points) }}</div>
                 </div>
             </div>
@@ -25,7 +25,7 @@
                     <i class="bi bi-calendar-month"></i>
                 </div>
                 <div>
-                    <div class="stat-label">Ойлик</div>
+                    <div class="stat-label">За месяц</div>
                     <div class="stat-value">{{ number_format($balance->monthly_points) }}</div>
                 </div>
             </div>
@@ -38,7 +38,7 @@
                     <i class="bi bi-calendar3"></i>
                 </div>
                 <div>
-                    <div class="stat-label">Кварталлик</div>
+                    <div class="stat-label">За квартал</div>
                     <div class="stat-value">{{ number_format($balance->quarterly_points) }}</div>
                 </div>
             </div>
@@ -51,7 +51,7 @@
                     <i class="bi bi-calendar-check"></i>
                 </div>
                 <div>
-                    <div class="stat-label">Йиллик</div>
+                    <div class="stat-label">За год</div>
                     <div class="stat-value">{{ number_format($balance->yearly_points) }}</div>
                 </div>
             </div>
@@ -63,7 +63,7 @@
     <div class="card-header">
         <h5 class="mb-0">
             <i class="bi bi-clock-history text-info me-2"></i>
-            Баллар тарихи
+            История баллов
         </h5>
     </div>
     <div class="card-body p-0">
@@ -71,9 +71,9 @@
             <table class="table table-hover mb-0">
                 <thead>
                     <tr>
-                        <th>Сана</th>
-                        <th>Тавсиф</th>
-                        <th>Манба</th>
+                        <th>Дата</th>
+                        <th>Описание</th>
+                        <th>Источник</th>
                         <th class="text-end">Балл</th>
                     </tr>
                 </thead>
@@ -103,7 +103,7 @@
                     <tr>
                         <td colspan="4" class="text-center py-5 text-muted">
                             <i class="bi bi-inbox" style="font-size: 48px; opacity: 0.3;"></i>
-                            <div class="mt-2">Тарих йўқ</div>
+                            <div class="mt-2">Нет истории</div>
                         </td>
                     </tr>
                     @endforelse

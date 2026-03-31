@@ -1,7 +1,7 @@
 @extends('employee.layouts.app')
 
-@section('title', 'Шон-шараф зали')
-@section('page-title', 'Шон-шараф зали')
+@section('title', 'Зал славы')
+@section('page-title', 'Зал славы')
 
 @section('content')
 <style>
@@ -78,7 +78,7 @@
         <div class="hall-title-icon" style="background: linear-gradient(135deg, #FFD700, #FFA500);">
             <i class="bi bi-gem"></i>
         </div>
-        <h3>Йил ходимлари</h3>
+        <h3>Сотрудники года</h3>
     </div>
     <div class="row g-4">
         @forelse($employeesOfYear as $award)
@@ -99,7 +99,7 @@
         <div class="col-12">
             <div class="text-center py-4 text-muted">
                 <i class="bi bi-hourglass-split" style="font-size: 32px; opacity: 0.3;"></i>
-                <div class="mt-2">Ҳали эълон қилинмаган</div>
+                <div class="mt-2">Ещё не объявлен</div>
             </div>
         </div>
         @endforelse
@@ -112,7 +112,7 @@
         <div class="hall-title-icon" style="background: linear-gradient(135deg, #C0C0C0, #808080);">
             <i class="bi bi-trophy-fill"></i>
         </div>
-        <h3>Квартал ходимлари</h3>
+        <h3>Сотрудники квартала</h3>
     </div>
     <div class="row g-4">
         @forelse($employeesOfQuarter as $award)
@@ -133,7 +133,7 @@
         <div class="col-12">
             <div class="text-center py-4 text-muted">
                 <i class="bi bi-hourglass-split" style="font-size: 32px; opacity: 0.3;"></i>
-                <div class="mt-2">Ҳали эълон қилинмаган</div>
+                <div class="mt-2">Ещё не объявлен</div>
             </div>
         </div>
         @endforelse
@@ -146,7 +146,7 @@
         <div class="hall-title-icon" style="background: linear-gradient(135deg, #CD7F32, #8B4513);">
             <i class="bi bi-award-fill"></i>
         </div>
-        <h3>Ой ходимлари</h3>
+        <h3>Сотрудники месяца</h3>
     </div>
     <div class="row g-4">
         @forelse($employeesOfMonth as $award)
@@ -167,7 +167,7 @@
         <div class="col-12">
             <div class="text-center py-4 text-muted">
                 <i class="bi bi-hourglass-split" style="font-size: 32px; opacity: 0.3;"></i>
-                <div class="mt-2">Ҳали эълон қилинмаган</div>
+                <div class="mt-2">Ещё не объявлен</div>
             </div>
         </div>
         @endforelse

@@ -1,7 +1,7 @@
 @extends('employee.layouts.app')
 
-@section('title', 'Номинация қилиш')
-@section('page-title', 'Ходимни номинация қилиш')
+@section('title', 'Номинировать')
+@section('page-title', 'Номинировать сотрудника')
 
 @section('content')
 <div class="row justify-content-center">
@@ -10,7 +10,7 @@
             <div class="card-header">
                 <h5 class="mb-0">
                     <i class="bi bi-star-fill text-warning me-2"></i>
-                    Янги номинация
+                    Новая номинация
                 </h5>
             </div>
             <div class="card-body">
@@ -26,7 +26,7 @@
 
                     <!-- Nomination Type -->
                     <div class="mb-4">
-                        <label class="form-label fw-semibold">Номинация тури</label>
+                        <label class="form-label fw-semibold">Тип номинации</label>
                         <div class="row g-3">
                             @foreach($nominationTypes as $type)
                             <div class="col-md-6">
@@ -57,9 +57,9 @@
 
                     <!-- Employee Selection -->
                     <div class="mb-4">
-                        <label for="nominee_id" class="form-label fw-semibold">Ходимни танланг</label>
+                        <label for="nominee_id" class="form-label fw-semibold">Выберите сотрудника</label>
                         <select name="nominee_id" id="nominee_id" class="form-select form-select-lg @error('nominee_id') is-invalid @enderror" required>
-                            <option value="">-- Ходимни танланг --</option>
+                            <option value="">-- Выберите сотрудника --</option>
                             @foreach($employees as $employee)
                             <option value="{{ $employee->id }}" {{ old('nominee_id') == $employee->id ? 'selected' : '' }}>
                                 {{ $employee->name }}
@@ -76,12 +76,12 @@
 
                     <!-- Reason -->
                     <div class="mb-4">
-                        <label for="reason" class="form-label fw-semibold">Номинация сабаби</label>
+                        <label for="reason" class="form-label fw-semibold">Причина номинации</label>
                         <textarea name="reason" id="reason" rows="5"
                                   class="form-control @error('reason') is-invalid @enderror"
-                                  placeholder="Ушбу ходимни нима учун номинация қилаётганингизни тушунтиринг..."
+                                  placeholder="Объясните, почему вы номинируете этого сотрудника..."
                                   required>{{ old('reason') }}</textarea>
-                        <div class="form-text">Камида 10 белги. Аниқ ва ишонарли сабаблар номинациянинг тасдиқланиш имкониятини оширади.</div>
+                        <div class="form-text">Минимум 10 символов. Конкретные и убедительные причины повышают шансы на утверждение номинации.</div>
                         @error('reason')
                         <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
@@ -90,10 +90,10 @@
                     <div class="d-flex gap-3">
                         <button type="submit" class="btn btn-primary btn-lg">
                             <i class="bi bi-send me-2"></i>
-                            Номинация юбориш
+                            Отправить номинацию
                         </button>
                         <a href="{{ route('employee.recognition.index') }}" class="btn btn-outline-secondary btn-lg">
-                            Бекор қилиш
+                            Отмена
                         </a>
                     </div>
                 </form>
@@ -105,12 +105,12 @@
             <div class="d-flex gap-3">
                 <i class="bi bi-info-circle-fill fs-4"></i>
                 <div>
-                    <h6 class="mb-2">Номинация қоидалари</h6>
+                    <h6 class="mb-2">Правила номинирования</h6>
                     <ul class="mb-0 small">
-                        <li>Ҳар бир ходимни бир ойда бир турдаги номинацияда фақат бир марта номинация қилиш мумкин</li>
-                        <li>Номинация HR томонидан кўриб чиқилади ва тасдиқланади</li>
-                        <li>Номинация қилган ходимга ҳам балл берилади</li>
-                        <li>Энг кўп номинация олган ходим "Ой ходими" бўлиши мумкин</li>
+                        <li>Каждого сотрудника можно номинировать только один раз в месяц в одном типе номинации</li>
+                        <li>Номинация рассматривается и утверждается HR</li>
+                        <li>Номинирующий сотрудник также получает баллы</li>
+                        <li>Сотрудник с наибольшим числом номинаций может стать «Сотрудником месяца»</li>
                     </ul>
                 </div>
             </div>

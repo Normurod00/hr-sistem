@@ -1,12 +1,12 @@
 @extends('admin.layouts.app')
 
-@section('title', 'Номинациялар')
+@section('title', 'Номинации')
 
 @section('content')
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h4 class="mb-0">
         <i class="bi bi-star-fill text-warning me-2"></i>
-        Номинациялар рўйхати
+        Список номинаций
     </h4>
 </div>
 
@@ -16,15 +16,15 @@
         <form method="GET" class="row g-3">
             <div class="col-md-3">
                 <select name="status" class="form-select">
-                    <option value="">Барча ҳолатлар</option>
-                    <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>Кутилмоқда</option>
-                    <option value="approved" {{ request('status') === 'approved' ? 'selected' : '' }}>Тасдиқланган</option>
-                    <option value="rejected" {{ request('status') === 'rejected' ? 'selected' : '' }}>Рад этилган</option>
+                    <option value="">Все статусы</option>
+                    <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>Ожидание</option>
+                    <option value="approved" {{ request('status') === 'approved' ? 'selected' : '' }}>Утверждена</option>
+                    <option value="rejected" {{ request('status') === 'rejected' ? 'selected' : '' }}>Отклонена</option>
                 </select>
             </div>
             <div class="col-md-3">
                 <select name="type" class="form-select">
-                    <option value="">Барча турлар</option>
+                    <option value="">Все типы</option>
                     @foreach($nominationTypes as $type)
                     <option value="{{ $type->id }}" {{ request('type') == $type->id ? 'selected' : '' }}>{{ $type->name }}</option>
                     @endforeach
@@ -32,9 +32,9 @@
             </div>
             <div class="col-md-3">
                 <button type="submit" class="btn btn-primary">
-                    <i class="bi bi-search me-1"></i>Фильтрлаш
+                    <i class="bi bi-search me-1"></i>Фильтровать
                 </button>
-                <a href="{{ route('admin.recognition.nominations') }}" class="btn btn-outline-secondary">Тозалаш</a>
+                <a href="{{ route('admin.recognition.nominations') }}" class="btn btn-outline-secondary">Сбросить</a>
             </div>
         </form>
     </div>
@@ -47,11 +47,11 @@
                 <thead>
                     <tr>
                         <th>Номинант</th>
-                        <th>Тур</th>
-                        <th>Номинатор</th>
-                        <th>Сабаб</th>
-                        <th>Ҳолат</th>
-                        <th>Сана</th>
+                        <th>Тип</th>
+                        <th>Номинирующий</th>
+                        <th>Причина</th>
+                        <th>Статус</th>
+                        <th>Дата</th>
                         <th></th>
                     </tr>
                 </thead>
@@ -97,15 +97,15 @@
                                         <form action="{{ route('admin.recognition.reject-nomination', $nomination) }}" method="POST">
                                             @csrf
                                             <div class="modal-header">
-                                                <h5 class="modal-title">Номинацияни рад этиш</h5>
+                                                <h5 class="modal-title">Отклонить номинацию</h5>
                                                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                             </div>
                                             <div class="modal-body">
-                                                <textarea name="comment" class="form-control" rows="3" placeholder="Сабаб..." required></textarea>
+                                                <textarea name="comment" class="form-control" rows="3" placeholder="Причина..." required></textarea>
                                             </div>
                                             <div class="modal-footer">
-                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Бекор</button>
-                                                <button type="submit" class="btn btn-danger">Рад этиш</button>
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                                                <button type="submit" class="btn btn-danger">Отклонить</button>
                                             </div>
                                         </form>
                                     </div>
@@ -118,7 +118,7 @@
                     <tr>
                         <td colspan="7" class="text-center py-5 text-muted">
                             <i class="bi bi-inbox" style="font-size: 48px; opacity: 0.3;"></i>
-                            <div class="mt-2">Номинациялар топилмади</div>
+                            <div class="mt-2">Номинации не найдены</div>
                         </td>
                     </tr>
                     @endforelse

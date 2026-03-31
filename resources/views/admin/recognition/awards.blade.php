@@ -1,15 +1,15 @@
 @extends('admin.layouts.app')
 
-@section('title', 'Мукофотлар')
+@section('title', 'Награды')
 
 @section('content')
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h4 class="mb-0">
         <i class="bi bi-trophy-fill text-warning me-2"></i>
-        Мукофотлар
+        Награды
     </h4>
     <a href="{{ route('admin.recognition.create-award') }}" class="btn btn-primary">
-        <i class="bi bi-plus-lg me-1"></i>Мукофот бериш
+        <i class="bi bi-plus-lg me-1"></i>Выдать награду
     </a>
 </div>
 
@@ -19,12 +19,12 @@
             <table class="table table-hover mb-0">
                 <thead>
                     <tr>
-                        <th>Ходим</th>
-                        <th>Мукофот</th>
-                        <th>Давр</th>
-                        <th class="text-center">Номинациялар</th>
+                        <th>Сотрудник</th>
+                        <th>Награда</th>
+                        <th>Период</th>
+                        <th class="text-center">Номинации</th>
                         <th class="text-center">Балл</th>
-                        <th>Ҳолат</th>
+                        <th>Статус</th>
                         <th></th>
                     </tr>
                 </thead>
@@ -49,9 +49,9 @@
                         </td>
                         <td>
                             @if($award->is_published)
-                            <span class="badge bg-success">Эълон қилинган</span>
+                            <span class="badge bg-success">Объявлена</span>
                             @else
-                            <span class="badge bg-secondary">Яширин</span>
+                            <span class="badge bg-secondary">Скрыта</span>
                             @endif
                         </td>
                         <td>
@@ -76,7 +76,7 @@
                     <tr>
                         <td colspan="7" class="text-center py-5 text-muted">
                             <i class="bi bi-trophy" style="font-size: 48px; opacity: 0.3;"></i>
-                            <div class="mt-2">Мукофотлар йўқ</div>
+                            <div class="mt-2">Нет наград</div>
                         </td>
                     </tr>
                     @endforelse

@@ -1,7 +1,7 @@
 @extends('employee.layouts.app')
 
-@section('title', 'Менинг номинацияларим')
-@section('page-title', 'Менинг номинацияларим')
+@section('title', 'Мои номинации')
+@section('page-title', 'Мои номинации')
 
 @section('content')
 <div class="row g-4 mb-4">
@@ -13,7 +13,7 @@
                     <i class="bi bi-coin"></i>
                 </div>
                 <div>
-                    <div class="stat-label">Жами баллар</div>
+                    <div class="stat-label">Всего баллов</div>
                     <div class="stat-value">{{ number_format($myBalance->total_points) }}</div>
                 </div>
             </div>
@@ -26,7 +26,7 @@
                     <i class="bi bi-star-fill"></i>
                 </div>
                 <div>
-                    <div class="stat-label">Олинган номинациялар</div>
+                    <div class="stat-label">Полученные номинации</div>
                     <div class="stat-value">{{ $myBalance->nominations_received }}</div>
                 </div>
             </div>
@@ -39,7 +39,7 @@
                     <i class="bi bi-hand-thumbs-up-fill"></i>
                 </div>
                 <div>
-                    <div class="stat-label">Берилган номинациялар</div>
+                    <div class="stat-label">Отправленные номинации</div>
                     <div class="stat-value">{{ $myBalance->nominations_given }}</div>
                 </div>
             </div>
@@ -52,7 +52,7 @@
                     <i class="bi bi-trophy-fill"></i>
                 </div>
                 <div>
-                    <div class="stat-label">Мукофотлар</div>
+                    <div class="stat-label">Награды</div>
                     <div class="stat-value">{{ $myBalance->awards_won }}</div>
                 </div>
             </div>
@@ -67,7 +67,7 @@
             <div class="card-header">
                 <h5 class="mb-0">
                     <i class="bi bi-inbox-fill text-success me-2"></i>
-                    Олинган номинациялар
+                    Полученные номинации
                 </h5>
             </div>
             <div class="card-body p-0">
@@ -94,7 +94,7 @@
                 @empty
                 <div class="text-center py-5 text-muted">
                     <i class="bi bi-inbox" style="font-size: 48px; opacity: 0.3;"></i>
-                    <div class="mt-2">Номинациялар йўқ</div>
+                    <div class="mt-2">Нет номинаций</div>
                 </div>
                 @endforelse
             </div>
@@ -107,10 +107,10 @@
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">
                     <i class="bi bi-send-fill text-info me-2"></i>
-                    Берилган номинациялар
+                    Отправленные номинации
                 </h5>
                 <a href="{{ route('employee.recognition.nominate') }}" class="btn btn-sm btn-primary">
-                    <i class="bi bi-plus-lg me-1"></i>Янги
+                    <i class="bi bi-plus-lg me-1"></i>Новая
                 </a>
             </div>
             <div class="card-body p-0">
@@ -135,9 +135,9 @@
                 @empty
                 <div class="text-center py-5 text-muted">
                     <i class="bi bi-inbox" style="font-size: 48px; opacity: 0.3;"></i>
-                    <div class="mt-2">Номинациялар йўқ</div>
+                    <div class="mt-2">Нет номинаций</div>
                     <a href="{{ route('employee.recognition.nominate') }}" class="btn btn-primary mt-3">
-                        <i class="bi bi-plus-lg me-1"></i>Номинация қилиш
+                        <i class="bi bi-plus-lg me-1"></i>Номинировать
                     </a>
                 </div>
                 @endforelse
@@ -152,7 +152,7 @@
     <div class="card-header">
         <h5 class="mb-0">
             <i class="bi bi-trophy-fill text-warning me-2"></i>
-            Менинг мукофотларим
+            Мои награды
         </h5>
     </div>
     <div class="card-body">

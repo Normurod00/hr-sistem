@@ -1,7 +1,7 @@
 @extends('employee.layouts.app')
 
 @section('title', 'Рейтинг')
-@section('page-title', 'Ходимлар рейтинги')
+@section('page-title', 'Рейтинг сотрудников')
 
 @section('content')
 <style>
@@ -71,12 +71,12 @@
                     </div>
                 </div>
                 <div class="col">
-                    <div style="opacity: 0.8; font-size: 14px;">Сизнинг рейтингингиз</div>
+                    <div style="opacity: 0.8; font-size: 14px;">Ваш рейтинг</div>
                     <div style="font-size: 28px; font-weight: 700;">{{ number_format($userBalance->total_points) }} балл</div>
                     <div style="opacity: 0.8; font-size: 14px;">
-                        <i class="bi bi-trophy-fill me-1"></i> {{ $userBalance->awards_won }} мукофот
+                        <i class="bi bi-trophy-fill me-1"></i> {{ $userBalance->awards_won }} наград
                         <span class="mx-2">|</span>
-                        <i class="bi bi-star-fill me-1"></i> {{ $userBalance->nominations_received }} номинация
+                        <i class="bi bi-star-fill me-1"></i> {{ $userBalance->nominations_received }} номинаций
                     </div>
                 </div>
             </div>
@@ -87,15 +87,15 @@
             <div class="card-body">
                 <div class="row text-center">
                     <div class="col-4">
-                        <div class="text-muted small">Ойлик</div>
+                        <div class="text-muted small">За месяц</div>
                         <div class="fs-4 fw-bold text-primary">{{ number_format($userBalance->monthly_points) }}</div>
                     </div>
                     <div class="col-4">
-                        <div class="text-muted small">Кварталлик</div>
+                        <div class="text-muted small">За квартал</div>
                         <div class="fs-4 fw-bold text-info">{{ number_format($userBalance->quarterly_points) }}</div>
                     </div>
                     <div class="col-4">
-                        <div class="text-muted small">Йиллик</div>
+                        <div class="text-muted small">За год</div>
                         <div class="fs-4 fw-bold text-success">{{ number_format($userBalance->yearly_points) }}</div>
                     </div>
                 </div>
@@ -112,7 +112,7 @@
             <li class="nav-item">
                 <a class="nav-link {{ $currentPeriod === 'month' ? 'active' : '' }}"
                    href="{{ route('employee.recognition.leaderboard', ['period' => 'month']) }}">
-                    Ой
+                    Месяц
                 </a>
             </li>
             <li class="nav-item">
@@ -124,13 +124,13 @@
             <li class="nav-item">
                 <a class="nav-link {{ $currentPeriod === 'year' ? 'active' : '' }}"
                    href="{{ route('employee.recognition.leaderboard', ['period' => 'year']) }}">
-                    Йил
+                    Год
                 </a>
             </li>
             <li class="nav-item">
                 <a class="nav-link {{ $currentPeriod === 'total' ? 'active' : '' }}"
                    href="{{ route('employee.recognition.leaderboard', ['period' => 'total']) }}">
-                    Умумий
+                    Общий
                 </a>
             </li>
         </ul>
@@ -140,10 +140,10 @@
             <table class="table table-hover mb-0 leaderboard-table">
                 <thead>
                     <tr>
-                        <th style="width: 60px;">Ўрин</th>
-                        <th>Ходим</th>
-                        <th class="text-center" style="width: 100px;">Номинациялар</th>
-                        <th class="text-center" style="width: 100px;">Мукофотлар</th>
+                        <th style="width: 60px;">Место</th>
+                        <th>Сотрудник</th>
+                        <th class="text-center" style="width: 100px;">Номинации</th>
+                        <th class="text-center" style="width: 100px;">Награды</th>
                         <th class="text-end" style="width: 120px;">Балл</th>
                     </tr>
                 </thead>
@@ -164,7 +164,7 @@
                                     <div class="fw-semibold">
                                         {{ $item['user']->name ?? 'Unknown' }}
                                         @if($item['user']->id === auth()->id())
-                                        <span class="badge bg-primary ms-1">Сиз</span>
+                                        <span class="badge bg-primary ms-1">Вы</span>
                                         @endif
                                     </div>
                                     @if($item['user']->employeeProfile)
@@ -191,7 +191,7 @@
                     <tr>
                         <td colspan="5" class="text-center py-5 text-muted">
                             <i class="bi bi-inbox" style="font-size: 48px; opacity: 0.3;"></i>
-                            <div class="mt-2">Маълумот йўқ</div>
+                            <div class="mt-2">Нет данных</div>
                         </td>
                     </tr>
                     @endforelse

@@ -1,6 +1,6 @@
 @extends('employee.layouts.app')
 
-@section('title', 'Интизомий чоралар')
+@section('title', 'Дисциплинарные меры')
 
 @section('content')
 <div class="container-fluid py-4">
@@ -8,9 +8,9 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h4 class="mb-1">
-                <i class="bi bi-file-earmark-text me-2 text-primary"></i>Интизомий чоралар
+                <i class="bi bi-file-earmark-text me-2 text-primary"></i>Дисциплинарные меры
             </h4>
-            <p class="text-muted mb-0">Сизга тегишли интизомий чоралар рўйхати</p>
+            <p class="text-muted mb-0">Список ваших дисциплинарных мер</p>
         </div>
     </div>
 
@@ -20,7 +20,7 @@
             <div class="card border-0 shadow-sm">
                 <div class="card-body text-center">
                     <div class="display-6 fw-bold text-primary">{{ $statistics['total'] }}</div>
-                    <small class="text-muted">Жами</small>
+                    <small class="text-muted">Всего</small>
                 </div>
             </div>
         </div>
@@ -28,7 +28,7 @@
             <div class="card border-0 shadow-sm">
                 <div class="card-body text-center">
                     <div class="display-6 fw-bold text-danger">{{ $statistics['active'] }}</div>
-                    <small class="text-muted">Фаол</small>
+                    <small class="text-muted">Активные</small>
                 </div>
             </div>
         </div>
@@ -36,7 +36,7 @@
             <div class="card border-0 shadow-sm">
                 <div class="card-body text-center">
                     <div class="display-6 fw-bold text-warning">{{ $statistics['appealed'] }}</div>
-                    <small class="text-muted">Шикоят қилинган</small>
+                    <small class="text-muted">Обжалованные</small>
                 </div>
             </div>
         </div>
@@ -44,7 +44,7 @@
             <div class="card border-0 shadow-sm">
                 <div class="card-body text-center">
                     <div class="display-6 fw-bold text-success">{{ $statistics['revoked'] }}</div>
-                    <small class="text-muted">Бекор қилинган</small>
+                    <small class="text-muted">Отменённые</small>
                 </div>
             </div>
         </div>
@@ -53,13 +53,13 @@
     <!-- Actions List -->
     <div class="card shadow-sm">
         <div class="card-header d-flex justify-content-between align-items-center">
-            <h5 class="mb-0">Рўйхат</h5>
+            <h5 class="mb-0">Список</h5>
             <div>
                 <select class="form-select form-select-sm" id="statusFilter" style="width: auto;">
-                    <option value="">Барчаси</option>
-                    <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Фаол</option>
-                    <option value="appealed" {{ request('status') === 'appealed' ? 'selected' : '' }}>Шикоят</option>
-                    <option value="revoked" {{ request('status') === 'revoked' ? 'selected' : '' }}>Бекор</option>
+                    <option value="">Все</option>
+                    <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Активные</option>
+                    <option value="appealed" {{ request('status') === 'appealed' ? 'selected' : '' }}>Обжалование</option>
+                    <option value="revoked" {{ request('status') === 'revoked' ? 'selected' : '' }}>Отменённые</option>
                 </select>
             </div>
         </div>
@@ -79,7 +79,7 @@
                                     </span>
                                     @if(!$action->employee_acknowledged)
                                         <span class="badge bg-warning ms-2">
-                                            <i class="bi bi-exclamation-triangle"></i> Танишилмаган
+                                            <i class="bi bi-exclamation-triangle"></i> Не ознакомлен
                                         </span>
                                     @endif
                                 </div>
@@ -93,12 +93,12 @@
                             </div>
                             <div class="text-end">
                                 <a href="{{ route('employee.discipline.show', $action) }}" class="btn btn-sm btn-outline-primary">
-                                    <i class="bi bi-eye"></i> Кўриш
+                                    <i class="bi bi-eye"></i> Просмотр
                                 </a>
                                 @if($action->can_still_appeal)
                                     <button class="btn btn-sm btn-outline-warning ms-1"
                                             onclick="showAppealModal({{ $action->id }})">
-                                        <i class="bi bi-chat-left-text"></i> Шикоят
+                                        <i class="bi bi-chat-left-text"></i> Жалоба
                                     </button>
                                 @endif
                             </div>
@@ -113,8 +113,8 @@
         @else
             <div class="card-body text-center py-5">
                 <i class="bi bi-check-circle text-success" style="font-size: 4rem;"></i>
-                <h5 class="mt-3">Интизомий чоралар йўқ</h5>
-                <p class="text-muted">Сизга нисбатан ҳеч қандай интизомий чора қўлланилмаган</p>
+                <h5 class="mt-3">Дисциплинарных мер нет</h5>
+                <p class="text-muted">У вас нет дисциплинарных мер</p>
             </div>
         @endif
     </div>
@@ -125,7 +125,7 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Шикоят қилиш</h5>
+                <h5 class="modal-title">Подать жалобу</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form id="appealForm">
@@ -133,22 +133,22 @@
                     <input type="hidden" id="appealActionId">
                     <div class="alert alert-info">
                         <i class="bi bi-info-circle me-1"></i>
-                        Шикоятингизни батафсил ёзинг. Камида 50 та белги бўлиши керак.
+                        Опишите вашу жалобу подробно. Минимум 50 символов.
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Шикоят матни</label>
+                        <label class="form-label">Текст жалобы</label>
                         <textarea class="form-control" id="appealText" rows="5"
                                   minlength="50" maxlength="5000" required
-                                  placeholder="Шикоятингизни батафсил ёзинг..."></textarea>
+                                  placeholder="Опишите вашу жалобу подробно..."></textarea>
                         <div class="form-text">
                             <span id="charCount">0</span>/5000
                         </div>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Бекор</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
                     <button type="submit" class="btn btn-warning">
-                        <i class="bi bi-send me-1"></i>Юбориш
+                        <i class="bi bi-send me-1"></i>Отправить
                     </button>
                 </div>
             </form>
@@ -198,10 +198,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 alert(data.message);
                 window.location.reload();
             } else {
-                alert(data.error || 'Хатолик юз берди');
+                alert(data.error || 'Произошла ошибка');
             }
         } catch (error) {
-            alert('Сервер билан боғланишда хатолик');
+            alert('Ошибка соединения с сервером');
         }
     });
 });

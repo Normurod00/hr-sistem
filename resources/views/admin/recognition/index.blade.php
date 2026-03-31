@@ -1,16 +1,16 @@
 @extends('admin.layouts.app')
 
-@section('title', 'Эътироф тизими')
+@section('title', 'Система признания')
 
 @section('content')
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h4 class="mb-0">
         <i class="bi bi-trophy-fill text-warning me-2"></i>
-        Эътироф тизими
+        Система признания
     </h4>
     <div class="d-flex gap-2">
         <a href="{{ route('admin.recognition.create-award') }}" class="btn btn-primary">
-            <i class="bi bi-plus-lg me-1"></i>Мукофот бериш
+            <i class="bi bi-plus-lg me-1"></i>Выдать награду
         </a>
     </div>
 </div>
@@ -25,7 +25,7 @@
                         <i class="bi bi-star-fill text-warning fs-4"></i>
                     </div>
                     <div>
-                        <div class="text-muted small">Ой номинациялари</div>
+                        <div class="text-muted small">Номинации за месяц</div>
                         <div class="fs-4 fw-bold">{{ $stats['total_nominations_this_month'] }}</div>
                     </div>
                 </div>
@@ -40,7 +40,7 @@
                         <i class="bi bi-check-circle-fill text-success fs-4"></i>
                     </div>
                     <div>
-                        <div class="text-muted small">Тасдиқланган</div>
+                        <div class="text-muted small">Утверждено</div>
                         <div class="fs-4 fw-bold">{{ $stats['approved_nominations_this_month'] }}</div>
                     </div>
                 </div>
@@ -55,7 +55,7 @@
                         <i class="bi bi-hourglass-split text-danger fs-4"></i>
                     </div>
                     <div>
-                        <div class="text-muted small">Кутилмоқда</div>
+                        <div class="text-muted small">Ожидание</div>
                         <div class="fs-4 fw-bold">{{ $stats['pending_nominations'] }}</div>
                     </div>
                 </div>
@@ -70,7 +70,7 @@
                         <i class="bi bi-people-fill text-primary fs-4"></i>
                     </div>
                     <div>
-                        <div class="text-muted small">Фаол ходимлар</div>
+                        <div class="text-muted small">Активные сотрудники</div>
                         <div class="fs-4 fw-bold">{{ $stats['active_employees'] }}</div>
                     </div>
                 </div>
@@ -84,8 +84,8 @@
     <div class="col-lg-8">
         <div class="card border-0 shadow-sm">
             <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">Кутилаётган номинациялар</h5>
-                <a href="{{ route('admin.recognition.nominations') }}" class="btn btn-sm btn-outline-primary">Ҳаммаси</a>
+                <h5 class="mb-0">Ожидающие номинации</h5>
+                <a href="{{ route('admin.recognition.nominations') }}" class="btn btn-sm btn-outline-primary">Все</a>
             </div>
             <div class="card-body p-0">
                 @forelse($pendingNominations as $nomination)
@@ -126,18 +126,18 @@
                             <form action="{{ route('admin.recognition.reject-nomination', $nomination) }}" method="POST">
                                 @csrf
                                 <div class="modal-header">
-                                    <h5 class="modal-title">Номинацияни рад этиш</h5>
+                                    <h5 class="modal-title">Отклонить номинацию</h5>
                                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                 </div>
                                 <div class="modal-body">
                                     <div class="mb-3">
-                                        <label class="form-label">Сабаб</label>
+                                        <label class="form-label">Причина</label>
                                         <textarea name="comment" class="form-control" rows="3" required></textarea>
                                     </div>
                                 </div>
                                 <div class="modal-footer">
-                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Бекор</button>
-                                    <button type="submit" class="btn btn-danger">Рад этиш</button>
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                                    <button type="submit" class="btn btn-danger">Отклонить</button>
                                 </div>
                             </form>
                         </div>
@@ -146,7 +146,7 @@
                 @empty
                 <div class="text-center py-5 text-muted">
                     <i class="bi bi-check-circle" style="font-size: 48px; opacity: 0.3;"></i>
-                    <div class="mt-2">Кутилаётган номинациялар йўқ</div>
+                    <div class="mt-2">Нет ожидающих номинаций</div>
                 </div>
                 @endforelse
             </div>
@@ -158,18 +158,18 @@
         <!-- Quick Actions -->
         <div class="card border-0 shadow-sm mb-4">
             <div class="card-header bg-white">
-                <h5 class="mb-0">Тезкор амаллар</h5>
+                <h5 class="mb-0">Быстрые действия</h5>
             </div>
             <div class="card-body">
                 <div class="d-grid gap-2">
                     <a href="{{ route('admin.recognition.nominations') }}" class="btn btn-outline-primary">
-                        <i class="bi bi-list-check me-2"></i>Номинациялар
+                        <i class="bi bi-list-check me-2"></i>Номинации
                     </a>
                     <a href="{{ route('admin.recognition.awards') }}" class="btn btn-outline-warning">
-                        <i class="bi bi-trophy me-2"></i>Мукофотлар
+                        <i class="bi bi-trophy me-2"></i>Награды
                     </a>
                     <a href="{{ route('admin.recognition.nomination-types') }}" class="btn btn-outline-info">
-                        <i class="bi bi-tags me-2"></i>Номинация турлари
+                        <i class="bi bi-tags me-2"></i>Типы номинаций
                     </a>
                     <a href="{{ route('admin.recognition.leaderboard') }}" class="btn btn-outline-success">
                         <i class="bi bi-bar-chart me-2"></i>Рейтинг
@@ -181,7 +181,7 @@
         <!-- Recent Awards -->
         <div class="card border-0 shadow-sm">
             <div class="card-header bg-white">
-                <h5 class="mb-0">Охирги мукофотлар</h5>
+                <h5 class="mb-0">Последние награды</h5>
             </div>
             <div class="card-body p-0">
                 @forelse($recentAwards as $award)
@@ -194,12 +194,12 @@
                         <div class="text-muted small">{{ $award->award_type->label() }}</div>
                     </div>
                     @if(!$award->is_published)
-                    <span class="badge bg-warning text-dark">Эълон қилинмаган</span>
+                    <span class="badge bg-warning text-dark">Не объявлена</span>
                     @endif
                 </div>
                 @empty
                 <div class="text-center py-4 text-muted">
-                    <div class="small">Мукофотлар йўқ</div>
+                    <div class="small">Нет наград</div>
                 </div>
                 @endforelse
             </div>

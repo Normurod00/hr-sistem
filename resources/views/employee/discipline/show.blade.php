@@ -8,7 +8,7 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <a href="{{ route('employee.discipline.index') }}" class="text-muted text-decoration-none mb-2 d-inline-block">
-                <i class="bi bi-arrow-left me-1"></i>Орқага
+                <i class="bi bi-arrow-left me-1"></i>Назад
             </a>
             <h4 class="mb-1">
                 <i class="bi bi-file-earmark-text me-2 text-primary"></i>{{ $action->title }}
@@ -26,23 +26,23 @@
             <!-- Description Card -->
             <div class="card shadow-sm mb-4">
                 <div class="card-header">
-                    <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>Тафсилотлар</h5>
+                    <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>Подробности</h5>
                 </div>
                 <div class="card-body">
                     <div class="mb-4">
-                        <h6 class="text-muted mb-2">Тавсиф</h6>
+                        <h6 class="text-muted mb-2">Описание</h6>
                         <p class="mb-0">{{ $action->description }}</p>
                     </div>
 
                     <div class="mb-4">
-                        <h6 class="text-muted mb-2">Сабаб</h6>
+                        <h6 class="text-muted mb-2">Причина</h6>
                         <p class="mb-0">{{ $action->reason }}</p>
                     </div>
 
                     @if($action->fine_amount)
                         <div class="alert alert-danger">
                             <i class="bi bi-currency-exchange me-2"></i>
-                            <strong>Жарима миқдори:</strong>
+                            <strong>Сумма штрафа:</strong>
                             {{ number_format($action->fine_amount, 0, '.', ' ') }} {{ $action->fine_currency }}
                         </div>
                     @endif
@@ -53,28 +53,28 @@
             @if($action->appeal_text)
                 <div class="card shadow-sm mb-4">
                     <div class="card-header bg-warning text-dark">
-                        <h5 class="mb-0"><i class="bi bi-chat-left-text me-2"></i>Шикоят</h5>
+                        <h5 class="mb-0"><i class="bi bi-chat-left-text me-2"></i>Жалоба</h5>
                     </div>
                     <div class="card-body">
                         <div class="mb-3">
                             <small class="text-muted">
-                                Юборилган: {{ $action->appealed_at->format('d.m.Y H:i') }}
+                                Отправлена: {{ $action->appealed_at->format('d.m.Y H:i') }}
                             </small>
                         </div>
                         <p class="mb-3">{{ $action->appeal_text }}</p>
 
                         @if($action->appeal_status)
                             <div class="alert alert-{{ $action->appeal_status === 'approved' ? 'success' : ($action->appeal_status === 'rejected' ? 'danger' : 'info') }}">
-                                <strong>Ҳолат:</strong>
+                                <strong>Статус:</strong>
                                 @switch($action->appeal_status)
                                     @case('pending')
-                                        Кўриб чиқилмоқда
+                                        На рассмотрении
                                         @break
                                     @case('approved')
-                                        Қабул қилинди
+                                        Принята
                                         @break
                                     @case('rejected')
-                                        Рад этилди
+                                        Отклонена
                                         @break
                                 @endswitch
                             </div>
@@ -82,7 +82,7 @@
 
                         @if($action->appeal_resolution)
                             <div class="mt-3">
-                                <h6 class="text-muted mb-2">Қарор</h6>
+                                <h6 class="text-muted mb-2">Решение</h6>
                                 <p class="mb-0">{{ $action->appeal_resolution }}</p>
                             </div>
                         @endif
@@ -95,19 +95,19 @@
                 <div class="card shadow-sm border-warning">
                     <div class="card-body text-center py-4">
                         <i class="bi bi-exclamation-triangle text-warning" style="font-size: 3rem;"></i>
-                        <h5 class="mt-3">Танишганлигингизни тасдиқланг</h5>
+                        <h5 class="mt-3">Подтвердите ознакомление</h5>
                         <p class="text-muted mb-4">
-                            Ушбу интизомий чора билан танишганлигингизни тасдиқлашингиз керак.
+                            Вам необходимо подтвердить ознакомление с данной дисциплинарной мерой.
                         </p>
                         <button class="btn btn-warning btn-lg" onclick="acknowledgeAction()">
-                            <i class="bi bi-check-lg me-2"></i>Танишдим
+                            <i class="bi bi-check-lg me-2"></i>Ознакомлен
                         </button>
                     </div>
                 </div>
             @else
                 <div class="alert alert-success">
                     <i class="bi bi-check-circle me-2"></i>
-                    Сиз ушбу чора билан танишганлигингизни тасдиқладингиз
+                    Вы подтвердили ознакомление с данной мерой
                     <small class="d-block mt-1">{{ $action->acknowledged_at->format('d.m.Y H:i') }}</small>
                 </div>
             @endif
@@ -118,25 +118,25 @@
             <!-- Info Card -->
             <div class="card shadow-sm mb-4">
                 <div class="card-header">
-                    <h6 class="mb-0"><i class="bi bi-calendar me-2"></i>Саналар</h6>
+                    <h6 class="mb-0"><i class="bi bi-calendar me-2"></i>Даты</h6>
                 </div>
                 <div class="card-body">
                     <table class="table table-sm table-borderless mb-0">
                         <tr>
-                            <td class="text-muted">Ҳодиса санаси:</td>
+                            <td class="text-muted">Дата инцидента:</td>
                             <td class="text-end fw-medium">{{ $action->incident_date->format('d.m.Y') }}</td>
                         </tr>
                         <tr>
-                            <td class="text-muted">Чора санаси:</td>
+                            <td class="text-muted">Дата меры:</td>
                             <td class="text-end fw-medium">{{ $action->action_date->format('d.m.Y') }}</td>
                         </tr>
                         <tr>
-                            <td class="text-muted">Кучга киради:</td>
+                            <td class="text-muted">Вступает в силу:</td>
                             <td class="text-end fw-medium">{{ $action->effective_from->format('d.m.Y') }}</td>
                         </tr>
                         @if($action->effective_until)
                             <tr>
-                                <td class="text-muted">Муддати:</td>
+                                <td class="text-muted">Срок действия:</td>
                                 <td class="text-end fw-medium">{{ $action->effective_until->format('d.m.Y') }}</td>
                             </tr>
                         @endif
@@ -147,7 +147,7 @@
             <!-- Details Card -->
             <div class="card shadow-sm mb-4">
                 <div class="card-header">
-                    <h6 class="mb-0"><i class="bi bi-list-ul me-2"></i>Қўшимча маълумотлар</h6>
+                    <h6 class="mb-0"><i class="bi bi-list-ul me-2"></i>Дополнительная информация</h6>
                 </div>
                 <div class="card-body">
                     <table class="table table-sm table-borderless mb-0">
@@ -156,16 +156,16 @@
                             <td class="text-end">
                                 @switch($action->category)
                                     @case('attendance')
-                                        Давомат
+                                        Посещаемость
                                         @break
                                     @case('performance')
-                                        Иш сифати
+                                        Качество работы
                                         @break
                                     @case('conduct')
-                                        Хулқ-атвор
+                                        Поведение
                                         @break
                                     @case('policy_violation')
-                                        Сиёсат бузиш
+                                        Нарушение политики
                                         @break
                                     @default
                                         {{ $action->category }}
@@ -173,16 +173,16 @@
                             </td>
                         </tr>
                         <tr>
-                            <td class="text-muted">Оғирлик даражаси:</td>
+                            <td class="text-muted">Степень тяжести:</td>
                             <td class="text-end">{{ $action->severity_label }}</td>
                         </tr>
                         <tr>
-                            <td class="text-muted">Яратган:</td>
+                            <td class="text-muted">Создал:</td>
                             <td class="text-end">{{ $action->createdBy->name }}</td>
                         </tr>
                         @if($action->approvedBy)
                             <tr>
-                                <td class="text-muted">Тасдиқлаган:</td>
+                                <td class="text-muted">Утвердил:</td>
                                 <td class="text-end">{{ $action->approvedBy->name }}</td>
                             </tr>
                         @endif
@@ -194,18 +194,18 @@
             @if($action->can_still_appeal)
                 <div class="card shadow-sm border-warning">
                     <div class="card-header bg-warning text-dark">
-                        <h6 class="mb-0"><i class="bi bi-chat-left-text me-2"></i>Шикоят қилиш</h6>
+                        <h6 class="mb-0"><i class="bi bi-chat-left-text me-2"></i>Подать жалобу</h6>
                     </div>
                     <div class="card-body">
                         <p class="text-muted small mb-3">
-                            Ушбу чорага қарши шикоят қилишингиз мумкин.
+                            Вы можете подать жалобу на данную меру.
                             @if($action->appeal_deadline)
                                 <br>
-                                <strong>Муддат:</strong> {{ $action->appeal_deadline->format('d.m.Y') }} гача
+                                <strong>Срок:</strong> до {{ $action->appeal_deadline->format('d.m.Y') }}
                             @endif
                         </p>
                         <button class="btn btn-warning w-100" onclick="showAppealModal()">
-                            <i class="bi bi-send me-1"></i>Шикоят юбориш
+                            <i class="bi bi-send me-1"></i>Отправить жалобу
                         </button>
                     </div>
                 </div>
@@ -219,29 +219,29 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Шикоят қилиш</h5>
+                <h5 class="modal-title">Подать жалобу</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form id="appealForm">
                 <div class="modal-body">
                     <div class="alert alert-info">
                         <i class="bi bi-info-circle me-1"></i>
-                        Шикоятингизни батафсил ёзинг. Камида 50 та белги бўлиши керак.
+                        Опишите вашу жалобу подробно. Минимум 50 символов.
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Шикоят матни</label>
+                        <label class="form-label">Текст жалобы</label>
                         <textarea class="form-control" id="appealText" rows="5"
                                   minlength="50" maxlength="5000" required
-                                  placeholder="Шикоятингизни батафсил ёзинг..."></textarea>
+                                  placeholder="Опишите вашу жалобу подробно..."></textarea>
                         <div class="form-text">
                             <span id="charCount">0</span>/5000
                         </div>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Бекор</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
                     <button type="submit" class="btn btn-warning">
-                        <i class="bi bi-send me-1"></i>Юбориш
+                        <i class="bi bi-send me-1"></i>Отправить
                     </button>
                 </div>
             </form>
@@ -284,10 +284,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     alert(data.message);
                     window.location.reload();
                 } else {
-                    alert(data.error || 'Хатолик юз берди');
+                    alert(data.error || 'Произошла ошибка');
                 }
             } catch (error) {
-                alert('Сервер билан боғланишда хатолик');
+                alert('Ошибка соединения с сервером');
             }
         });
     }
@@ -300,7 +300,7 @@ function showAppealModal() {
 }
 
 async function acknowledgeAction() {
-    if (!confirm('Танишганлигингизни тасдиқлайсизми?')) {
+    if (!confirm('Подтверждаете ознакомление?')) {
         return;
     }
 
@@ -319,10 +319,10 @@ async function acknowledgeAction() {
             alert(data.message);
             window.location.reload();
         } else {
-            alert(data.error || 'Хатолик юз берди');
+            alert(data.error || 'Произошла ошибка');
         }
     } catch (error) {
-        alert('Сервер билан боғланишда хатолик');
+        alert('Ошибка соединения с сервером');
     }
 }
 </script>
