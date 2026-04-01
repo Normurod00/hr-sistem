@@ -204,6 +204,12 @@
                 body: JSON.stringify({ message }),
             });
 
+            if (response.status === 419) {
+                typingIndicator.classList.add('d-none');
+                addMessage('assistant', 'Сессия истекла. Обновите страницу (Ctrl+R).');
+                return;
+            }
+
             const data = await response.json();
 
             typingIndicator.classList.add('d-none');
@@ -220,7 +226,12 @@
             }
         } catch (error) {
             typingIndicator.classList.add('d-none');
-            addMessage('assistant', 'Ошибка соединения. Проверьте интернет и попробуйте снова.');
+            console.error('Chat error:', error);
+            if (!navigator.onLine) {
+                addMessage('assistant', 'Нет подключения к интернету. Проверьте соединение.');
+            } else {
+                addMessage('assistant', 'Ошибка сервера. Попробуйте ещё раз через несколько секунд.');
+            }
         }
     });
 

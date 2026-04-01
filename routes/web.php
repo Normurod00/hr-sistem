@@ -145,6 +145,17 @@ Route::middleware('admin')->prefix('admin')->name('admin.')->group(function () {
         // Dashboard
         Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
+        // Analytics
+        Route::get('/analytics/candidates', [\App\Http\Controllers\Admin\AnalyticsController::class, 'candidates'])->name('analytics.candidates');
+        Route::get('/analytics/employees', [\App\Http\Controllers\Admin\AnalyticsController::class, 'employees'])->name('analytics.employees');
+
+        // Employee Documents (AI analysis)
+        Route::get('/employee-documents', [\App\Http\Controllers\Admin\EmployeeDocumentController::class, 'index'])->name('employee-documents.index');
+        Route::post('/employee-documents', [\App\Http\Controllers\Admin\EmployeeDocumentController::class, 'store'])->name('employee-documents.store');
+        Route::get('/employee-documents/{document}', [\App\Http\Controllers\Admin\EmployeeDocumentController::class, 'show'])->name('employee-documents.show');
+        Route::post('/employee-documents/{document}/reprocess', [\App\Http\Controllers\Admin\EmployeeDocumentController::class, 'reprocess'])->name('employee-documents.reprocess');
+        Route::delete('/employee-documents/{document}', [\App\Http\Controllers\Admin\EmployeeDocumentController::class, 'destroy'])->name('employee-documents.destroy');
+
         // Vacancies CRUD
         Route::resource('vacancies', AdminVacancyController::class);
         Route::post('/vacancies/{vacancy}/toggle', [AdminVacancyController::class, 'toggleActive'])->name('vacancies.toggle');

@@ -38,6 +38,11 @@
             <span>Интизом</span>
         </a>
 
+        <a href="{{ route('employee.documents.index') }}" class="nav-link {{ request()->routeIs('employee.documents.*') ? 'active' : '' }}">
+            <i class="bi bi-file-earmark-medical"></i>
+            <span>Мои документы</span>
+        </a>
+
         <div class="nav-section-title">Информация</div>
 
         <a href="{{ route('employee.policies.index') }}" class="nav-link {{ request()->routeIs('employee.policies.*') ? 'active' : '' }}">

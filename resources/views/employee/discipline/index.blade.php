@@ -187,11 +187,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'Accept': 'application/json',
                     'X-CSRF-TOKEN': '{{ csrf_token() }}'
                 },
                 body: JSON.stringify({ appeal_text: appealText })
             });
 
+            if (response.status === 419) { alert('Сессия истекла. Обновите страницу.'); return; }
             const data = await response.json();
 
             if (data.success) {
@@ -201,7 +203,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 alert(data.error || 'Произошла ошибка');
             }
         } catch (error) {
-            alert('Ошибка соединения с сервером');
+            console.error('Appeal error:', error);
+            alert(navigator.onLine ? 'Ошибка сервера. Попробуйте позже.' : 'Нет подключения к интернету.');
         }
     });
 });

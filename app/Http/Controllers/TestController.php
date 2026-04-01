@@ -186,7 +186,7 @@ class TestController extends Controller
     private function generateQuestions(Vacancy $vacancy): array
     {
         try {
-            $response = Http::timeout(30)->post(config('services.ai.url', 'http://127.0.0.1:8095') . '/generate-test', [
+            $response = Http::timeout(30)->post(config('ai.url', 'http://127.0.0.1:8095') . '/generate-test', [
                 'vacancy_title' => $vacancy->title,
                 'vacancy_description' => $vacancy->description ?? '',
                 'required_skills' => $vacancy->required_skills ?? [],
@@ -202,7 +202,11 @@ class TestController extends Controller
                 return $response->json('questions', []);
             }
         } catch (\Exception $e) {
-            \Log::error('Test generation failed: ' . $e->getMessage());
+            \Log::error('Test generation failed, using fallback questions', [
+                'vacancy_id' => $vacancy->id,
+                'ai_url' => config('ai.url', 'http://127.0.0.1:8095'),
+                'error' => $e->getMessage(),
+            ]);
         }
 
         // Fallback - базовые вопросы

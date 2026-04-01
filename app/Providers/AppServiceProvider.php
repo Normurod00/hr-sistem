@@ -4,8 +4,10 @@ namespace App\Providers;
 
 use App\Models\Application;
 use App\Models\ApplicationFile;
+use App\Models\EmployeeDocument;
 use App\Observers\ApplicationObserver;
 use App\Observers\ApplicationFileObserver;
+use App\Observers\EmployeeDocumentObserver;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -28,5 +30,8 @@ class AppServiceProvider extends ServiceProvider
 
         // При загрузке нового файла - сбросить старый анализ
         ApplicationFile::observe(ApplicationFileObserver::class);
+
+        // Автоматическая обработка документов сотрудников
+        EmployeeDocument::observe(EmployeeDocumentObserver::class);
     }
 }

@@ -555,7 +555,16 @@
             }
         })
         .then(res => {
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            if (res.status === 419) {
+                alert('Сессия истекла. Страница будет перезагружена.');
+                location.reload();
+                throw new Error('Session expired');
+            }
+            if (!res.ok) {
+                return res.json().catch(() => ({})).then(data => {
+                    throw {status: res.status, data: data};
+                });
+            }
             return res.json();
         })
         .then(data => {
@@ -577,8 +586,13 @@
             }
         })
         .catch(err => {
+            if (err.message === 'Session expired') return;
             console.error('Start test error:', err);
-            alert('Не удалось начать тест. Обновите страницу и попробуйте снова.');
+            if (err.status >= 500) {
+                alert('Ошибка сервера (' + err.status + '). Попробуйте обновить страницу.');
+            } else {
+                alert('Не удалось начать тест. Обновите страницу и попробуйте снова.');
+            }
             btn.disabled = false;
             btn.innerHTML = '<i class="bi bi-play-fill"></i> Начать тест';
         });
@@ -742,7 +756,16 @@
             body: JSON.stringify({ answers })
         })
         .then(res => {
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            if (res.status === 419) {
+                alert('Сессия истекла. Страница будет перезагружена.');
+                location.reload();
+                throw new Error('Session expired');
+            }
+            if (!res.ok) {
+                return res.json().catch(() => ({})).then(data => {
+                    throw {status: res.status, data: data};
+                });
+            }
             return res.json();
         })
         .then(data => {
@@ -754,8 +777,17 @@
             }
         })
         .catch(err => {
+            if (err.message === 'Session expired') return;
             console.error('Submit test error:', err);
-            alert('Не удалось отправить результаты. Обновите страницу и попробуйте снова.');
+            if (err.status === 422) {
+                alert('Ошибка валидации: ' + (err.data?.message || 'Проверьте ответы'));
+            } else if (err.status >= 500) {
+                alert('Ошибка сервера (' + err.status + '). Попробуйте снова.');
+            } else if (!navigator.onLine) {
+                alert('Нет подключения к интернету. Результаты будут отправлены при восстановлении связи.');
+            } else {
+                alert('Не удалось отправить результаты. Попробуйте снова.');
+            }
             document.getElementById('loadingOverlay').style.display = 'none';
         });
     }

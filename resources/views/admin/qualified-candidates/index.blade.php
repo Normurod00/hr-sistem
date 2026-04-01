@@ -667,15 +667,29 @@
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'Accept': 'application/json',
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
             },
             body: JSON.stringify({ message: message })
         })
-        .then(response => response.json())
+        .then(response => {
+            if (response.status === 419) {
+                showNotification('error', 'Сессия истекла. Обновите страницу.');
+                throw new Error('CSRF token expired');
+            }
+            if (response.status === 422) {
+                return response.json().then(d => { throw {validation: true, data: d}; });
+            }
+            if (!response.ok) {
+                return response.json().catch(() => ({})).then(d => {
+                    throw {status: response.status, data: d};
+                });
+            }
+            return response.json();
+        })
         .then(data => {
             if (data.success) {
                 inviteModal.hide();
-                // Update button to show chat link
                 const row = document.querySelector(`tr[data-id="${applicationId}"]`);
                 const actionButtons = row.querySelector('.action-buttons');
                 actionButtons.innerHTML = `
@@ -686,18 +700,24 @@
                         <i class="bi bi-eye-fill"></i>
                     </a>
                 `;
-                // Remove checkbox
                 const checkbox = row.querySelector('.candidate-checkbox');
                 if (checkbox) checkbox.remove();
 
                 showNotification('success', data.message);
             } else {
-                showNotification('error', data.message);
+                showNotification('error', data.message || 'Не удалось пригласить кандидата');
             }
         })
         .catch(error => {
-            showNotification('error', 'Произошла ошибка');
-            console.error(error);
+            if (error.validation) {
+                const msgs = Object.values(error.data.errors || {}).flat().join(', ');
+                showNotification('error', msgs || 'Ошибка валидации');
+            } else if (error.status) {
+                showNotification('error', error.data?.message || `Ошибка сервера (${error.status})`);
+            } else if (error.message !== 'CSRF token expired') {
+                showNotification('error', 'Ошибка сети. Проверьте подключение.');
+            }
+            console.error('Invite error:', error);
         });
     }
 
@@ -733,22 +753,38 @@
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'Accept': 'application/json',
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
             },
             body: JSON.stringify({ application_ids: ids })
         })
-        .then(response => response.json())
+        .then(response => {
+            if (response.status === 419) {
+                showNotification('error', 'Сессия истекла. Обновите страницу.');
+                throw new Error('CSRF token expired');
+            }
+            if (!response.ok) {
+                return response.json().catch(() => ({})).then(d => {
+                    throw {status: response.status, data: d};
+                });
+            }
+            return response.json();
+        })
         .then(data => {
             if (data.success) {
                 showNotification('success', data.message);
                 setTimeout(() => location.reload(), 1000);
             } else {
-                showNotification('error', data.message);
+                showNotification('error', data.message || 'Не удалось отправить приглашения');
             }
         })
         .catch(error => {
-            showNotification('error', 'Произошла ошибка');
-            console.error(error);
+            if (error.status) {
+                showNotification('error', error.data?.message || `Ошибка сервера (${error.status})`);
+            } else if (error.message !== 'CSRF token expired') {
+                showNotification('error', 'Ошибка сети. Проверьте подключение.');
+            }
+            console.error('Bulk invite error:', error);
         });
     }
 

@@ -23,6 +23,25 @@
                 <span>Дашборд</span>
             </a>
 
+            {{-- Analytics --}}
+            <details class="ui-group" {{ request()->routeIs('admin.analytics.*') ? 'open' : '' }} data-tooltip="Аналитика">
+                <summary class="ui-group__summary">
+                    <i class="fa-solid fa-chart-pie"></i>
+                    <span>Аналитика</span>
+                    <i class="chev fa-solid fa-chevron-down"></i>
+                </summary>
+                <div class="ui-submenu">
+                    <a class="ui-submenu__item {{ request()->routeIs('admin.analytics.candidates') ? 'is-active' : '' }}"
+                       href="{{ route('admin.analytics.candidates') }}">
+                        <i class="fa-solid fa-user-graduate"></i><span>Кандидаты</span>
+                    </a>
+                    <a class="ui-submenu__item {{ request()->routeIs('admin.analytics.employees') ? 'is-active' : '' }}"
+                       href="{{ route('admin.analytics.employees') }}">
+                        <i class="fa-solid fa-users"></i><span>Сотрудники</span>
+                    </a>
+                </div>
+            </details>
+
             <div class="ui-menu__section">Рекрутинг</div>
 
             {{-- Vacancies --}}
@@ -100,6 +119,13 @@
 
             <div class="ui-menu__section">Управление</div>
 
+            {{-- Employee Documents --}}
+            <a class="ui-menu__item {{ request()->routeIs('admin.employee-documents.*') ? 'is-active' : '' }}"
+               href="{{ route('admin.employee-documents.index') }}" data-tooltip="Документы сотрудников">
+                <i class="fa-solid fa-file-shield"></i>
+                <span>Документы сотрудников</span>
+            </a>
+
             {{-- Users --}}
             <details class="ui-group" {{ request()->routeIs('admin.users.*') ? 'open' : '' }} data-tooltip="Пользователи">
                 <summary class="ui-group__summary">
@@ -143,12 +169,6 @@
                 <span>Открыть сайт</span>
             </a>
         </nav>
-
-
-
-
-
-        
     </div>
 
     @php

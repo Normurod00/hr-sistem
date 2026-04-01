@@ -143,12 +143,13 @@ class ApplicationController extends Controller
             return back()->with('error', 'Неверный статус.');
         }
 
-        Application::whereIn('id', $validated['application_ids'])
-            ->update(['status' => $status]);
+        $applications = Application::whereIn('id', $validated['application_ids'])->get();
 
-        $count = count($validated['application_ids']);
+        foreach ($applications as $application) {
+            $application->update(['status' => $status]);
+        }
 
-        return back()->with('success', "Статус обновлён для {$count} заявок.");
+        return back()->with('success', "Статус обновлён для {$applications->count()} заявок.");
     }
 
     /**
@@ -156,8 +157,8 @@ class ApplicationController extends Controller
      */
     public function destroy(Application $application): RedirectResponse
     {
-        $candidateName = $application->candidate->name;
-        $vacancyTitle = $application->vacancy->title;
+        $candidateName = $application->candidate?->name ?? 'Неизвестный';
+        $vacancyTitle = $application->vacancy?->title ?? 'Удалённая вакансия';
 
         $application->delete();
 

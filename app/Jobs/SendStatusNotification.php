@@ -31,22 +31,35 @@ class SendStatusNotification implements ShouldQueue
             'status' => $this->newStatus->value,
         ]);
 
-        // Загружаем связанные данные
-        $this->application->load(['candidate', 'vacancy']);
+        try {
+            // Загружаем связанные данные
+            $this->application->load(['candidate', 'vacancy']);
 
-        // Отправляем SMS
-        $notification = $smsService->sendStatusNotification($this->application, $this->newStatus);
+            // Отправляем SMS
+            $notification = $smsService->sendStatusNotification($this->application, $this->newStatus);
 
-        if ($notification) {
-            Log::info('SendStatusNotification: SMS отправлено', [
+            if ($notification) {
+                Log::info('SendStatusNotification: SMS отправлено', [
+                    'application_id' => $this->application->id,
+                    'notification_id' => $notification->id,
+                    'status' => $notification->status,
+                ]);
+            } else {
+                Log::warning('SendStatusNotification: SMS не отправлено (нет номера телефона или данных)', [
+                    'application_id' => $this->application->id,
+                ]);
+            }
+        } catch (\Throwable $e) {
+            Log::error('SendStatusNotification: ошибка при отправке SMS', [
                 'application_id' => $this->application->id,
-                'notification_id' => $notification->id,
-                'status' => $notification->status,
+                'status' => $this->newStatus->value,
+                'error' => $e->getMessage(),
             ]);
-        } else {
-            Log::warning('SendStatusNotification: SMS не отправлено (нет номера телефона)', [
-                'application_id' => $this->application->id,
-            ]);
+
+            // В sync режиме не пробрасываем исключение, чтобы не ломать основной flow
+            if (config('queue.default') !== 'sync') {
+                throw $e;
+            }
         }
     }
 

@@ -77,6 +77,11 @@ class EmployeeProfile extends Model
         return $this->hasMany(DisciplinaryAction::class);
     }
 
+    public function documents(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(\App\Models\EmployeeDocument::class);
+    }
+
     // ===== SCOPES =====
 
     public function scopeActive($query)

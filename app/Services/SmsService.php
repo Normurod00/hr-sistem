@@ -69,7 +69,8 @@ class SmsService
             return null;
         }
 
-        $message = "Напоминание: у вас есть незавершённый тест для вакансии \"{$application->vacancy->title}\". Пройдите его в личном кабинете.";
+        $vacancyTitle = $application->vacancy?->title ?? 'вакансия';
+        $message = "Напоминание: у вас есть незавершённый тест для вакансии \"{$vacancyTitle}\". Пройдите его в личном кабинете.";
 
         return $this->send($phone, $message, 'test_reminder', $application->id, $userId);
     }
@@ -99,7 +100,8 @@ class SmsService
             return null;
         }
 
-        $message = "Приглашаем вас на собеседование по вакансии \"{$application->vacancy->title}\" на {$datetime}.";
+        $vacancyTitle = $application->vacancy?->title ?? 'вакансия';
+        $message = "Приглашаем вас на собеседование по вакансии \"{$vacancyTitle}\" на {$datetime}.";
 
         if ($meetingLink) {
             $message .= " Ссылка: {$meetingLink}";
@@ -174,6 +176,13 @@ class SmsService
      */
     private function buildStatusMessage(Application $application, ApplicationStatus $status): ?string
     {
+        if (!$application->vacancy) {
+            Log::warning('Cannot build SMS message: vacancy is null', [
+                'application_id' => $application->id,
+            ]);
+            return null;
+        }
+
         $vacancyTitle = $application->vacancy->title;
         $companyName = config('app.name', 'HR Robot');
 

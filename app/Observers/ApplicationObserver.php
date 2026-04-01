@@ -15,14 +15,19 @@ class ApplicationObserver
      */
     public function created(Application $application): void
     {
-        // Даём время на загрузку файлов (они могут добавляться после создания заявки)
-        // Используем delay чтобы файлы успели сохраниться
-        ProcessApplicationFilesBatch::dispatch($application)
-            ->delay(now()->addSeconds(5));
+        try {
+            ProcessApplicationFilesBatch::dispatch($application)
+                ->delay(now()->addSeconds(5));
 
-        Log::info('ApplicationObserver: запланирована обработка файлов', [
-            'application_id' => $application->id,
-        ]);
+            Log::info('ApplicationObserver: запланирована обработка файлов', [
+                'application_id' => $application->id,
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('ApplicationObserver: ошибка при запуске обработки файлов', [
+                'application_id' => $application->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 
     /**
@@ -43,13 +48,20 @@ class ApplicationObserver
             ];
 
             if (in_array($newStatus, $notifyStatuses)) {
-                // Отправляем SMS через Job (асинхронно)
-                SendStatusNotification::dispatch($application, $newStatus);
+                try {
+                    SendStatusNotification::dispatch($application, $newStatus);
 
-                Log::info('ApplicationObserver: запланирована отправка SMS', [
-                    'application_id' => $application->id,
-                    'new_status' => $newStatus->value,
-                ]);
+                    Log::info('ApplicationObserver: запланирована отправка SMS', [
+                        'application_id' => $application->id,
+                        'new_status' => $newStatus->value,
+                    ]);
+                } catch (\Throwable $e) {
+                    Log::error('ApplicationObserver: ошибка при отправке SMS (основной flow не затронут)', [
+                        'application_id' => $application->id,
+                        'new_status' => $newStatus->value,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
             }
         }
     }

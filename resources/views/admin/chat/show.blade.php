@@ -588,16 +588,25 @@ document.addEventListener('DOMContentLoaded', function() {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'Accept': 'application/json',
                     'X-CSRF-TOKEN': '{{ csrf_token() }}',
                 },
                 body: JSON.stringify({ message }),
             });
+
+            if (response.status === 419) {
+                alert('Сессия истекла. Обновите страницу.');
+                return;
+            }
 
             const data = await response.json();
 
             if (data.success) {
                 addMessage(data.message);
                 lastMessageId = data.message.id;
+            } else {
+                console.error('Send failed:', data);
+                messageInput.value = message;
             }
         } catch (error) {
             console.error('Error:', error);
@@ -611,7 +620,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // Poll for new messages
     async function pollMessages() {
         try {
-            const response = await fetch(`{{ route("admin.chat.messages", $application) }}?last_id=${lastMessageId}`);
+            const response = await fetch(`{{ route("admin.chat.messages", $application) }}?last_id=${lastMessageId}`, {
+                headers: { 'Accept': 'application/json' },
+            });
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
             const data = await response.json();
 
             if (data.messages && data.messages.length > 0) {
@@ -661,22 +673,30 @@ document.getElementById('meetingForm').addEventListener('submit', async function
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'Accept': 'application/json',
                 'X-CSRF-TOKEN': '{{ csrf_token() }}',
             },
             body: JSON.stringify(data),
         });
+
+        if (response.status === 419) {
+            alert('Сессия истекла. Обновите страницу.');
+            return;
+        }
 
         const result = await response.json();
 
         if (result.success) {
             closeMeetingModal();
             location.reload();
+        } else if (result.errors) {
+            alert(Object.values(result.errors).flat().join('\n'));
         } else {
             alert(result.error || 'Ошибка создания встречи');
         }
     } catch (error) {
         console.error('Error:', error);
-        alert('Ошибка создания встречи');
+        alert('Не удалось создать встречу. Проверьте данные и попробуйте снова.');
     }
 });
 
@@ -688,6 +708,7 @@ async function cancelMeeting(id) {
         const response = await fetch(`{{ url('admin/chat/meeting') }}/${id}/cancel`, {
             method: 'POST',
             headers: {
+                'Accept': 'application/json',
                 'X-CSRF-TOKEN': '{{ csrf_token() }}',
             },
         });

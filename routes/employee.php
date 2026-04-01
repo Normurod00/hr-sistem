@@ -41,6 +41,14 @@ Route::name('employee.')->group(function () {
         Route::put('settings/notifications', [EmployeePortalController::class, 'updateNotifications'])
             ->name('settings.notifications');
 
+        // ===== DOCUMENTS =====
+        Route::prefix('documents')->name('documents.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Employee\DocumentController::class, 'index'])
+                ->name('index');
+            Route::post('/', [\App\Http\Controllers\Employee\DocumentController::class, 'store'])
+                ->name('store');
+        });
+
         // ===== CHAT (AI) =====
         Route::prefix('chat')->name('chat.')->group(function () {
             Route::get('/', [EmployeeChatController::class, 'index'])
