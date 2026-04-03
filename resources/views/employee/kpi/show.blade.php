@@ -215,18 +215,21 @@
 </div>
 
 <!-- Explain Modal -->
-<div class="modal fade" id="explainModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title"><i class="bi bi-robot me-2"></i>AI объяснение</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+<div class="modal fade" id="explainModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content" style="border-radius:16px; border:none;">
+            <div class="modal-header" style="border-bottom:1px solid var(--br);">
+                <h5 class="modal-title"><i class="bi bi-robot me-2" style="color:var(--accent,#E52716);"></i>AI объяснение</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body" id="explainContent">
+            <div class="modal-body" id="explainContent" style="min-height:120px;">
                 <div class="text-center py-5">
-                    <div class="spinner-border text-primary"></div>
+                    <div class="spinner-border" style="color:var(--accent,#E52716);"></div>
                     <p class="mt-3 text-muted">Анализирую...</p>
                 </div>
+            </div>
+            <div class="modal-footer" style="border-top:1px solid var(--br);">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
             </div>
         </div>
     </div>
@@ -235,17 +238,40 @@
 
 @push('scripts')
 <script>
+    let explainModalInstance = null;
+
+    function getExplainModal() {
+        if (!explainModalInstance) {
+            explainModalInstance = new bootstrap.Modal(document.getElementById('explainModal'));
+        }
+        return explainModalInstance;
+    }
+
+    // Clean up modal on close — prevent body scroll lock
+    document.getElementById('explainModal').addEventListener('hidden.bs.modal', function () {
+        document.body.classList.remove('modal-open');
+        document.body.style.overflow = '';
+        document.body.style.paddingRight = '';
+        document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+    });
+
     async function explainKpi() {
-        const modal = new bootstrap.Modal(document.getElementById('explainModal'));
+        const modal = getExplainModal();
         const content = document.getElementById('explainContent');
 
         content.innerHTML = `
             <div class="text-center py-5">
-                <div class="spinner-border text-primary"></div>
+                <div class="spinner-border" style="color:var(--accent,#E52716);"></div>
                 <p class="mt-3 text-muted">Анализирую ваши показатели...</p>
             </div>
         `;
         modal.show();
+
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
 
         try {
             const response = await fetch('{{ route("employee.kpi.explain", $snapshot) }}', {
@@ -253,6 +279,7 @@
                 headers: {
                     'X-CSRF-TOKEN': '{{ csrf_token() }}',
                     'Accept': 'application/json',
+                    'Content-Type': 'application/json',
                 },
             });
 
@@ -262,36 +289,38 @@
 
             const data = await response.json();
 
-            function escapeHtml(str) {
-                const div = document.createElement('div');
-                div.textContent = str;
-                return div.innerHTML;
-            }
-
             if (data.success) {
                 content.innerHTML = `
                     <div class="mb-4">
-                        <h6><i class="bi bi-chat-left-text me-2 text-primary"></i>Анализ</h6>
-                        <p>${escapeHtml(data.explanation)}</p>
+                        <h6 style="color:var(--accent,#E52716);"><i class="bi bi-chat-left-text me-2"></i>Анализ</h6>
+                        <p style="line-height:1.6;">${escapeHtml(data.explanation || '')}</p>
                     </div>
+                    ${data.metric_explanations ? `
+                        <div class="mb-4">
+                            <h6 style="color:var(--accent,#E52716);"><i class="bi bi-list-check me-2"></i>По показателям</h6>
+                            ${Object.entries(data.metric_explanations).map(([k,v]) =>
+                                `<div style="padding:10px 14px;background:rgba(0,0,0,0.02);border-radius:10px;margin-bottom:8px;"><strong>${escapeHtml(k)}:</strong> ${escapeHtml(v)}</div>`
+                            ).join('')}
+                        </div>
+                    ` : ''}
                     ${data.improvement_suggestions?.length ? `
                         <div>
-                            <h6><i class="bi bi-lightbulb me-2 text-warning"></i>Советы</h6>
-                            <ul>${data.improvement_suggestions.map(s => `<li>${escapeHtml(s)}</li>`).join('')}</ul>
+                            <h6 style="color:var(--accent,#E52716);"><i class="bi bi-lightbulb me-2"></i>Рекомендации</h6>
+                            <ul style="margin:0;padding-left:20px;">${data.improvement_suggestions.map(s => `<li style="margin-bottom:6px;">${escapeHtml(s)}</li>`).join('')}</ul>
                         </div>
                     ` : ''}
                 `;
             } else {
-                const errorMsg = data.error || 'AI-сервер временно недоступен. Попробуйте позже.';
                 content.innerHTML = `
-                    <div class="alert alert-warning mb-0">
+                    <div class="alert alert-warning mb-0" style="border-radius:12px;">
                         <i class="bi bi-exclamation-triangle me-2"></i>
-                        ${escapeHtml(errorMsg)}
+                        ${escapeHtml(data.error || 'AI-сервер временно недоступен. Попробуйте позже.')}
                     </div>`;
             }
         } catch (e) {
+            console.error('AI explain error:', e);
             content.innerHTML = `
-                <div class="alert alert-warning mb-0">
+                <div class="alert alert-warning mb-0" style="border-radius:12px;">
                     <i class="bi bi-exclamation-triangle me-2"></i>
                     Не удалось подключиться к AI-серверу. Попробуйте позже.
                 </div>`;

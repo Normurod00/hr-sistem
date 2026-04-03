@@ -176,20 +176,23 @@
 </div>
 
 {{-- Explain Modal --}}
-<div class="modal fade" id="explainModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
+<div class="modal fade" id="explainModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
         <div class="modal-content" style="border-radius:16px; border:none; box-shadow:0 8px 40px rgba(0,0,0,0.15);">
             <div class="modal-header" style="border-bottom:1px solid var(--br); padding:20px 24px;">
                 <h5 class="modal-title" style="font-weight:700;">
                     <i class="fa-solid fa-robot me-2" style="color:var(--accent);"></i>AI объяснение KPI
                 </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body" id="explainContent" style="padding:24px;">
+            <div class="modal-body" id="explainContent" style="padding:24px; min-height:120px;">
                 <div class="text-center py-5">
                     <div class="spinner-border" style="color:var(--accent);" role="status"></div>
                     <p class="mt-3" style="color:var(--fg-3);">Анализирую ваши показатели...</p>
                 </div>
+            </div>
+            <div class="modal-footer" style="border-top:1px solid var(--br);">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
             </div>
         </div>
     </div>
@@ -234,8 +237,22 @@
 
     function escapeHtml(str) { const d = document.createElement('div'); d.textContent = str; return d.innerHTML; }
 
+    // Fix modal scroll lock
+    document.getElementById('explainModal').addEventListener('hidden.bs.modal', function () {
+        document.body.classList.remove('modal-open');
+        document.body.style.overflow = '';
+        document.body.style.paddingRight = '';
+        document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+    });
+
+    let _explainModal = null;
+    function getModal() {
+        if (!_explainModal) _explainModal = new bootstrap.Modal(document.getElementById('explainModal'));
+        return _explainModal;
+    }
+
 async function explainKpi(snapshotId) {
-    const modal = new bootstrap.Modal(document.getElementById('explainModal'));
+    const modal = getModal();
     const content = document.getElementById('explainContent');
 
     content.innerHTML = `
