@@ -20,7 +20,12 @@ class Enforce2FA
             return $next($request);
         }
 
-        $setting = $user->twoFactorSetting;
+        // Если таблица ещё не создана — пропускаем
+        try {
+            $setting = $user->twoFactorSetting;
+        } catch (\Illuminate\Database\QueryException $e) {
+            return $next($request);
+        }
 
         // Если 2FA не включён — пропускаем
         if (!$setting || !$setting->isConfirmed()) {

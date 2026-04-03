@@ -34,9 +34,13 @@ class EnforcePasswordPolicy
             return $next($request);
         }
 
-        if ($this->passwordPolicy->isExpired($user)) {
-            return redirect()->route('security.password.expired')
-                ->with('warning', 'Ваш пароль истёк. Необходимо сменить пароль.');
+        try {
+            if ($this->passwordPolicy->isExpired($user)) {
+                return redirect()->route('security.password.expired')
+                    ->with('warning', 'Ваш пароль истёк. Необходимо сменить пароль.');
+            }
+        } catch (\Illuminate\Database\QueryException $e) {
+            // Таблица password_histories ещё не создана — пропускаем
         }
 
         return $next($request);

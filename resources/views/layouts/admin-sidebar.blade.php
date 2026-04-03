@@ -103,9 +103,13 @@
 
             {{-- Staff Chat --}}
             @php
-                $staffUnread = \App\Models\StaffChat::where('hr_id', auth()->id())
-                    ->withCount(['messages as unread' => fn($q) => $q->where('sender_id', '!=', auth()->id())->whereNull('read_at')])
-                    ->get()->sum('unread');
+                try {
+                    $staffUnread = \App\Models\StaffChat::where('hr_id', auth()->id())
+                        ->withCount(['messages as unread' => fn($q) => $q->where('sender_id', '!=', auth()->id())->whereNull('read_at')])
+                        ->get()->sum('unread');
+                } catch (\Exception $e) {
+                    $staffUnread = 0;
+                }
             @endphp
             <a class="ui-menu__item {{ request()->routeIs('admin.staff-chat.*') ? 'is-active' : '' }}"
                href="{{ route('admin.staff-chat.index') }}" data-tooltip="Чаты с сотрудниками">

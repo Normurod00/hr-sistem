@@ -18,14 +18,55 @@ class ChatController extends Controller
     /**
      * Список всех чатов
      */
-    public function index(): View
+    public function index(Request $request): View
     {
-        $chatRooms = ChatRoom::with(['candidate', 'application.vacancy', 'messages' => fn($q) => $q->latest()->take(1)])
-            ->active()
-            ->orderByDesc('last_message_at')
-            ->paginate(20);
+        $query = ChatRoom::with(['candidate', 'application.vacancy', 'messages' => fn($q) => $q->latest()->take(1)])
+            ->active();
 
-        return view('admin.chat.index', compact('chatRooms'));
+        // Поиск по имени кандидата
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->whereHas('candidate', fn($q) => $q->where('name', 'ilike', "%{$search}%")
+                ->orWhere('email', 'ilike', "%{$search}%"));
+        }
+
+        // Фильтр по вакансии
+        if ($request->filled('vacancy_id')) {
+            $query->whereHas('application', fn($q) => $q->where('vacancy_id', $request->input('vacancy_id')));
+        }
+
+        // Фильтр: только непрочитанные
+        if ($request->input('unread_only')) {
+            $query->whereHas('messages', fn($q) => $q->where('sender_type', '!=', 'hr')->whereNull('read_at'));
+        }
+
+        // Сортировка
+        $sort = $request->input('sort', 'recent');
+        if ($sort === 'name') {
+            $query->orderBy(
+                \App\Models\User::select('name')
+                    ->whereColumn('users.id', 'chat_rooms.candidate_id')
+                    ->limit(1)
+            );
+        } else {
+            $query->orderByDesc('last_message_at');
+        }
+
+        $chatRooms = $query->paginate(30)->withQueryString();
+
+        // Статистика
+        $totalChats = ChatRoom::active()->count();
+        $totalUnread = ChatMessage::whereHas('chatRoom', fn($q) => $q->active())
+            ->where('sender_type', '!=', 'hr')
+            ->whereNull('read_at')
+            ->count();
+
+        // Вакансии для фильтра
+        $vacancies = \App\Models\Vacancy::whereHas('applications.chatRoom')
+            ->orderBy('title')
+            ->get(['id', 'title']);
+
+        return view('admin.chat.index', compact('chatRooms', 'totalChats', 'totalUnread', 'vacancies'));
     }
 
     /**
