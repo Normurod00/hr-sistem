@@ -101,7 +101,7 @@ document.getElementById('messageForm').addEventListener('submit', async function
     appendMessage({ message: text, formatted_time: 'Сейчас', is_mine: true });
 
     try {
-        const res = await fetch(`/employee/staff-chat/${CHAT_ID}/send`, {
+        const res = await fetch(`/staff-chat/${CHAT_ID}/send`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF },
             body: JSON.stringify({ message: text })
@@ -143,7 +143,7 @@ if (typeof Echo !== 'undefined') {
     // Polling fallback
     setInterval(async () => {
         try {
-            const res = await fetch(`/employee/staff-chat/${CHAT_ID}/messages?last_id=${lastMessageId}`);
+            const res = await fetch(`/staff-chat/${CHAT_ID}/messages?last_id=${lastMessageId}`);
             const { messages } = await res.json();
             messages.forEach(m => {
                 if (!m.is_mine) appendMessage(m);
