@@ -60,20 +60,32 @@ logger = logging.getLogger(__name__)
 doc_parser: Optional[DocumentParser] = None
 hr_analyzer: Optional[RuleBasedAnalyzer] = None
 
+# Hybrid AI Pipeline
+ai_pipeline = None
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Lifecycle управление"""
-    global doc_parser, hr_analyzer
+    global doc_parser, hr_analyzer, ai_pipeline
 
-    logger.info("Starting HR AI Server (Rule-Based)...")
+    logger.info("Starting HR AI Server...")
 
     # Инициализация компонентов
     doc_parser = DocumentParser(CONFIG.get('documents', {}))
     hr_analyzer = RuleBasedAnalyzer(CONFIG.get('hr', {}))
 
+    # Hybrid AI Pipeline (LLM + Rules + Fallback)
+    try:
+        from core.hybrid_pipeline import HybridPipeline
+        ai_pipeline = HybridPipeline(CONFIG, hr_analyzer)
+        llm_status = "LLM enabled" if ai_pipeline.llm.is_available else "Rule-based only (LLM disabled)"
+        logger.info(f"Hybrid AI Pipeline initialized: {llm_status}")
+    except Exception as e:
+        logger.warning(f"Failed to init HybridPipeline, using rule-based only: {e}")
+        ai_pipeline = None
+
     logger.info("HR AI Server started successfully!")
-    logger.info("Using Rule-Based analyzer (no external LLM required)")
 
     yield
 
@@ -114,13 +126,22 @@ app.include_router(employee_router)
 @app.get("/", tags=["Health"])
 async def root():
     """Корневой эндпоинт"""
+    mode = "hybrid" if (ai_pipeline and ai_pipeline.llm.is_available) else "rule-based"
     return {
         "service": "HR AI Server",
         "status": "running",
-        "version": "2.1.0",
-        "mode": "rule-based",
-        "modules": ["candidate", "employee"]
+        "version": "3.0.0",
+        "mode": mode,
+        "modules": ["candidate", "employee", "hybrid_ai"]
     }
+
+
+@app.get("/ai/stats", tags=["Health"])
+async def ai_stats():
+    """Статистика AI pipeline (LLM usage, fallbacks, costs)."""
+    if not ai_pipeline:
+        return {"status": "pipeline_not_initialized", "mode": "rule-based"}
+    return ai_pipeline.get_stats()
 
 
 @app.get("/health", response_model=HealthResponse, tags=["Health"])
@@ -137,16 +158,22 @@ async def health_check():
     except Exception:
         pass
 
+    llm_available = ai_pipeline and ai_pipeline.llm.is_available
+    mode = "hybrid" if llm_available else "rule-based"
+
     return HealthResponse(
         status="ok",
-        version="2.1.0",
-        llm_provider="rule-based",
-        llm_model="internal",
+        version="3.0.0",
+        llm_provider=mode,
+        llm_model=ai_pipeline.llm._resolve_model(ai_pipeline.llm.default_tier) if llm_available else "internal",
         timestamp=datetime.now(),
         details={
+            "mode": mode,
+            "llm_enabled": llm_available,
             "ocr_available": ocr_ok,
             "analyzer_ready": hr_analyzer is not None,
             "parser_ready": doc_parser is not None,
+            "pipeline_ready": ai_pipeline is not None,
             "memory_mb": round(psutil.Process().memory_info().rss / 1024 / 1024, 1),
             "cpu_percent": psutil.cpu_percent(interval=0),
         }

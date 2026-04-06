@@ -17,32 +17,26 @@ server:
     - "http://127.0.0.1:8000"
     - "*"
 
-# LLM Configuration
+# LLM Configuration (Hybrid AI)
 llm:
-  # Провайдер: local, ollama, openai
-  provider: "local"
+  # Feature flag: true = use LLM, false = rule-based only
+  enabled: false  # Включить после настройки API ключа
 
-  # Локальная модель (рекомендуется для приватности)
-  local:
-    model_path: "models/mistral-7b-instruct-v0.2.Q4_K_M.gguf"
-    model_type: "mistral"
-    context_length: 4096
-    max_tokens: 2048
-    temperature: 0.3
-    threads: 4
-    gpu_layers: 0  # 0 для CPU, >0 для GPU
+  # Провайдер: anthropic, openai
+  provider: "anthropic"
 
-  # Ollama (альтернатива)
-  ollama:
-    host: "http://127.0.0.1:11434"
-    model: "mistral"
-    timeout: 120
+  # API ключи (лучше через ENV)
+  anthropic_api_key: ""  # или ANTHROPIC_API_KEY env
+  openai_api_key: ""     # или OPENAI_API_KEY env
 
-  # OpenAI (fallback)
-  openai:
-    api_key: ""  # Из .env
-    model: "gpt-4o-mini"
-    max_tokens: 4096
+  # Уровень модели по умолчанию: cheap, medium, strong
+  default_tier: "medium"
+
+  # Таймаут запроса к LLM (секунды)
+  timeout: 60
+
+  # Максимум повторных попыток
+  max_retries: 2
 
 # Обработка документов
 documents:

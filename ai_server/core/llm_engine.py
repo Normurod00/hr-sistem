@@ -1,302 +1,342 @@
 """
-LLM Engine for HR AI Server
-Поддержка локальных моделей через ctransformers
+LLM Engine — единый клиент для работы с LLM провайдерами.
+
+Hybrid AI: Anthropic Claude / OpenAI GPT с fallback на rule-based.
+Structured JSON output, retry, timeout, token/cost tracking, sensitive data masking.
 """
 
 import os
+import re
 import json
-import asyncio
+import time
 import logging
-from typing import Optional, Dict, Any
-from abc import ABC, abstractmethod
+import asyncio
+from typing import Optional, Dict, Any, List
+from dataclasses import dataclass
+
+import httpx
 
 logger = logging.getLogger(__name__)
 
+# ============== Model Configuration ==============
 
-class BaseLLMProvider(ABC):
-    """Базовый класс для LLM провайдеров"""
+MODEL_TIERS = {
+    "cheap": {
+        "anthropic": "claude-haiku-4-5-20251001",
+        "openai": "gpt-4o-mini",
+        "max_tokens": 2048,
+    },
+    "medium": {
+        "anthropic": "claude-sonnet-4-6",
+        "openai": "gpt-4o",
+        "max_tokens": 4096,
+    },
+    "strong": {
+        "anthropic": "claude-opus-4-6",
+        "openai": "gpt-4o",
+        "max_tokens": 8192,
+    },
+}
 
-    @abstractmethod
-    async def generate(self, prompt: str, **kwargs) -> str:
-        pass
-
-    @abstractmethod
-    def is_available(self) -> bool:
-        pass
-
-
-class LocalLLMProvider(BaseLLMProvider):
-    """
-    Локальный LLM через ctransformers
-    Поддерживает GGUF модели (Mistral, Llama, etc.)
-    """
-
-    def __init__(self, config: Dict[str, Any]):
-        self.config = config
-        self.model = None
-        self._load_model()
-
-    def _load_model(self):
-        """Загрузка модели"""
-        try:
-            from ctransformers import AutoModelForCausalLM
-
-            model_path = self.config.get('model_path', '')
-            model_type = self.config.get('model_type', 'mistral')
-
-            if not os.path.exists(model_path):
-                logger.warning(f"Model not found at {model_path}")
-                return
-
-            logger.info(f"Loading local model: {model_path}")
-
-            self.model = AutoModelForCausalLM.from_pretrained(
-                model_path,
-                model_type=model_type,
-                context_length=self.config.get('context_length', 4096),
-                threads=self.config.get('threads', 4),
-                gpu_layers=self.config.get('gpu_layers', 0)
-            )
-
-            logger.info("Local model loaded successfully")
-
-        except ImportError:
-            logger.error("ctransformers not installed. Run: pip install ctransformers")
-        except Exception as e:
-            logger.error(f"Failed to load local model: {e}")
-
-    def is_available(self) -> bool:
-        return self.model is not None
-
-    async def generate(self, prompt: str, **kwargs) -> str:
-        if not self.model:
-            raise RuntimeError("Local model not loaded")
-
-        max_tokens = kwargs.get('max_tokens', self.config.get('max_tokens', 2048))
-        temperature = kwargs.get('temperature', self.config.get('temperature', 0.3))
-
-        # Запускаем в executor чтобы не блокировать event loop
-        loop = asyncio.get_event_loop()
-        response = await loop.run_in_executor(
-            None,
-            lambda: self.model(
-                prompt,
-                max_new_tokens=max_tokens,
-                temperature=temperature,
-                stop=["</s>", "[INST]", "[/INST]"]
-            )
-        )
-
-        return response.strip()
+MODEL_COSTS_PER_1M = {
+    "claude-haiku-4-5-20251001": {"input": 1.0, "output": 5.0},
+    "claude-sonnet-4-6": {"input": 3.0, "output": 15.0},
+    "claude-opus-4-6": {"input": 15.0, "output": 75.0},
+    "gpt-4o-mini": {"input": 0.15, "output": 0.6},
+    "gpt-4o": {"input": 5.0, "output": 15.0},
+}
 
 
-class OllamaProvider(BaseLLMProvider):
-    """Ollama API провайдер"""
+# ============== Data Classes ==============
 
-    def __init__(self, config: Dict[str, Any]):
-        self.host = config.get('host', 'http://127.0.0.1:11434')
-        self.model = config.get('model', 'mistral')
-        self.timeout = config.get('timeout', 120)
-        self._available = None
-
-    def is_available(self) -> bool:
-        if self._available is not None:
-            return self._available
-
-        import httpx
-        try:
-            response = httpx.get(f"{self.host}/api/tags", timeout=5)
-            self._available = response.status_code == 200
-        except Exception:
-            self._available = False
-
-        return self._available
-
-    async def generate(self, prompt: str, **kwargs) -> str:
-        import httpx
-
-        async with httpx.AsyncClient(timeout=self.timeout) as client:
-            response = await client.post(
-                f"{self.host}/api/generate",
-                json={
-                    "model": self.model,
-                    "prompt": prompt,
-                    "stream": False,
-                    "options": {
-                        "temperature": kwargs.get('temperature', 0.3),
-                        "num_predict": kwargs.get('max_tokens', 2048)
-                    }
-                }
-            )
-            response.raise_for_status()
-            data = response.json()
-            return data.get('response', '').strip()
+@dataclass
+class LLMResponse:
+    """Результат вызова LLM."""
+    success: bool
+    data: Optional[dict] = None
+    raw_text: str = ""
+    model: str = ""
+    input_tokens: int = 0
+    output_tokens: int = 0
+    cost_usd: float = 0.0
+    latency_ms: int = 0
+    error: Optional[str] = None
+    retries: int = 0
 
 
-class OpenAIProvider(BaseLLMProvider):
-    """OpenAI API провайдер (fallback)"""
+class UsageTracker:
+    """Трекер использования токенов и стоимости."""
 
-    def __init__(self, config: Dict[str, Any]):
-        self.api_key = config.get('api_key') or os.getenv('OPENAI_API_KEY')
-        self.model = config.get('model', 'gpt-4o-mini')
-        self.max_tokens = config.get('max_tokens', 4096)
+    def __init__(self):
+        self.total_requests = 0
+        self.total_input_tokens = 0
+        self.total_output_tokens = 0
+        self.total_cost_usd = 0.0
+        self.total_errors = 0
 
-    def is_available(self) -> bool:
-        return bool(self.api_key)
+    def record(self, response: LLMResponse):
+        self.total_requests += 1
+        self.total_input_tokens += response.input_tokens
+        self.total_output_tokens += response.output_tokens
+        self.total_cost_usd += response.cost_usd
+        if not response.success:
+            self.total_errors += 1
 
-    async def generate(self, prompt: str, **kwargs) -> str:
-        import httpx
-
-        headers = {
-            "Authorization": f"Bearer {self.api_key}",
-            "Content-Type": "application/json"
+    def to_dict(self) -> dict:
+        return {
+            "total_requests": self.total_requests,
+            "total_input_tokens": self.total_input_tokens,
+            "total_output_tokens": self.total_output_tokens,
+            "total_cost_usd": round(self.total_cost_usd, 4),
+            "total_errors": self.total_errors,
         }
 
-        # Определяем, нужен ли JSON режим
-        json_mode = kwargs.get('json_mode', False)
 
-        payload = {
-            "model": self.model,
-            "messages": [
-                {"role": "user", "content": prompt}
-            ],
-            "temperature": kwargs.get('temperature', 0.3),
-            "max_tokens": kwargs.get('max_tokens', self.max_tokens)
-        }
+# ============== Sensitive Data Masking ==============
 
-        if json_mode:
-            payload["response_format"] = {"type": "json_object"}
+_MASK_PATTERNS = [
+    (re.compile(r'\b\d{13,16}\b'), '[CARD_MASKED]'),
+    (re.compile(r'\b\d{14}\b'), '[PINFL_MASKED]'),
+    (re.compile(r'\b[A-Z]{2}\d{7}\b'), '[PASSPORT_MASKED]'),
+]
 
-        async with httpx.AsyncClient(timeout=60) as client:
-            response = await client.post(
-                "https://api.openai.com/v1/chat/completions",
-                headers=headers,
-                json=payload
-            )
-            response.raise_for_status()
-            data = response.json()
-            return data['choices'][0]['message']['content'].strip()
 
+def mask_sensitive(text: str) -> str:
+    """Маскирует чувствительные данные перед отправкой в LLM."""
+    for pattern, replacement in _MASK_PATTERNS:
+        text = pattern.sub(replacement, text)
+    return text
+
+
+# ============== JSON Extraction ==============
+
+def extract_json(text: str) -> Optional[dict]:
+    """Извлечение JSON из ответа LLM (может быть обёрнут в markdown)."""
+    text = text.strip()
+
+    # Direct parse
+    try:
+        return json.loads(text)
+    except (json.JSONDecodeError, ValueError):
+        pass
+
+    # From ```json ... ```
+    match = re.search(r'```(?:json)?\s*\n?(.*?)\n?\s*```', text, re.DOTALL)
+    if match:
+        try:
+            return json.loads(match.group(1).strip())
+        except (json.JSONDecodeError, ValueError):
+            pass
+
+    # Find first balanced { ... }
+    start = text.find('{')
+    if start >= 0:
+        depth = 0
+        for i in range(start, len(text)):
+            if text[i] == '{':
+                depth += 1
+            elif text[i] == '}':
+                depth -= 1
+                if depth == 0:
+                    try:
+                        return json.loads(text[start:i + 1])
+                    except (json.JSONDecodeError, ValueError):
+                        break
+
+    return None
+
+
+# ============== LLM Engine ==============
 
 class LLMEngine:
     """
-    Главный класс для работы с LLM
-    Автоматически выбирает доступный провайдер
+    Production LLM Engine.
+    Supports Anthropic Claude and OpenAI GPT with structured JSON output.
     """
 
-    def __init__(self, config: Dict[str, Any]):
-        self.config = config
-        self.provider_name = config.get('provider', 'local')
-        self.provider: Optional[BaseLLMProvider] = None
-        self._init_provider()
+    def __init__(self, config: dict):
+        llm_config = config.get("llm", config)
 
-    def _init_provider(self):
-        """Инициализация провайдера"""
-        llm_config = self.config.get('llm', {})
-        provider_name = llm_config.get('provider', 'local')
+        self.provider = llm_config.get("provider", "anthropic")
+        self.anthropic_key = llm_config.get("anthropic_api_key") or os.getenv("ANTHROPIC_API_KEY", "")
+        self.openai_key = llm_config.get("openai_api_key") or os.getenv("OPENAI_API_KEY", "")
+        self.default_tier = llm_config.get("default_tier", "medium")
+        self.timeout = llm_config.get("timeout", 60)
+        self.max_retries = llm_config.get("max_retries", 2)
+        self.enabled = llm_config.get("enabled", False)
 
-        providers = []
+        self.usage = UsageTracker()
 
-        # Добавляем провайдеры в порядке приоритета
-        if provider_name == 'local':
-            providers.append(('local', LocalLLMProvider(llm_config.get('local', {}))))
-            providers.append(('ollama', OllamaProvider(llm_config.get('ollama', {}))))
-            providers.append(('openai', OpenAIProvider(llm_config.get('openai', {}))))
+        status = "enabled" if self.is_available else "disabled"
+        logger.info(f"LLM Engine: provider={self.provider}, tier={self.default_tier}, status={status}")
 
-        elif provider_name == 'ollama':
-            providers.append(('ollama', OllamaProvider(llm_config.get('ollama', {}))))
-            providers.append(('local', LocalLLMProvider(llm_config.get('local', {}))))
-            providers.append(('openai', OpenAIProvider(llm_config.get('openai', {}))))
-
-        elif provider_name == 'openai':
-            providers.append(('openai', OpenAIProvider(llm_config.get('openai', {}))))
-
-        # Выбираем первый доступный
-        for name, provider in providers:
-            if provider.is_available():
-                self.provider = provider
-                self.provider_name = name
-                logger.info(f"Using LLM provider: {name}")
-                return
-
-        logger.warning("No LLM provider available!")
-
+    @property
     def is_available(self) -> bool:
-        return self.provider is not None and self.provider.is_available()
+        if not self.enabled:
+            return False
+        if self.provider == "anthropic":
+            return bool(self.anthropic_key)
+        if self.provider == "openai":
+            return bool(self.openai_key)
+        return False
 
-    def get_provider_info(self) -> Dict[str, str]:
-        """Информация о текущем провайдере"""
-        if not self.provider:
-            return {"provider": "none", "model": "none"}
+    def _resolve_model(self, tier: str) -> str:
+        tier_cfg = MODEL_TIERS.get(tier, MODEL_TIERS["medium"])
+        return tier_cfg.get(self.provider, tier_cfg.get("anthropic", "claude-sonnet-4-6"))
 
-        if isinstance(self.provider, LocalLLMProvider):
-            return {
-                "provider": "local",
-                "model": self.config.get('llm', {}).get('local', {}).get('model_path', 'unknown')
-            }
-        elif isinstance(self.provider, OllamaProvider):
-            return {
-                "provider": "ollama",
-                "model": self.provider.model
-            }
-        elif isinstance(self.provider, OpenAIProvider):
-            return {
-                "provider": "openai",
-                "model": self.provider.model
-            }
+    def _resolve_max_tokens(self, tier: str) -> int:
+        return MODEL_TIERS.get(tier, MODEL_TIERS["medium"])["max_tokens"]
 
-        return {"provider": "unknown", "model": "unknown"}
+    def _calc_cost(self, model: str, input_tokens: int, output_tokens: int) -> float:
+        costs = MODEL_COSTS_PER_1M.get(model, {"input": 0, "output": 0})
+        return (input_tokens * costs["input"] + output_tokens * costs["output"]) / 1_000_000
 
-    async def generate(self, prompt: str, json_mode: bool = False, **kwargs) -> str:
+    # ============== Main API ==============
+
+    async def generate_json(
+        self,
+        system_prompt: str,
+        user_prompt: str,
+        tier: str = "medium",
+        temperature: float = 0.1,
+        task_name: str = "unknown",
+        mask_input: bool = True,
+    ) -> LLMResponse:
         """
-        Генерация ответа
+        Генерация structured JSON ответа от LLM.
 
         Args:
-            prompt: Текст промпта
-            json_mode: Ожидать JSON ответ
-            **kwargs: Дополнительные параметры (temperature, max_tokens)
-
-        Returns:
-            Сгенерированный текст
+            system_prompt: Системный промпт с инструкциями
+            user_prompt: Данные задачи
+            tier: cheap / medium / strong
+            temperature: 0.0 - 1.0
+            task_name: для логирования и аудита
+            mask_input: маскировать чувствительные данные
         """
-        if not self.provider:
-            raise RuntimeError("No LLM provider available")
+        if not self.is_available:
+            return LLMResponse(success=False, error="LLM not available or disabled")
 
-        kwargs['json_mode'] = json_mode
-        return await self.provider.generate(prompt, **kwargs)
+        if mask_input:
+            user_prompt = mask_sensitive(user_prompt)
 
-    async def generate_json(self, prompt: str, **kwargs) -> Dict[str, Any]:
-        """
-        Генерация и парсинг JSON ответа
+        model = self._resolve_model(tier)
+        max_tokens = self._resolve_max_tokens(tier)
+        start_time = time.time()
+        last_error = None
 
-        Args:
-            prompt: Промпт с инструкцией вернуть JSON
+        for attempt in range(self.max_retries + 1):
+            try:
+                if self.provider == "anthropic":
+                    result = await self._call_anthropic(model, system_prompt, user_prompt, max_tokens, temperature)
+                elif self.provider == "openai":
+                    result = await self._call_openai(model, system_prompt, user_prompt, max_tokens, temperature)
+                else:
+                    return LLMResponse(success=False, error=f"Unknown provider: {self.provider}")
 
-        Returns:
-            Распарсенный словарь
-        """
-        response = await self.generate(prompt, json_mode=True, **kwargs)
+                latency = int((time.time() - start_time) * 1000)
+                cost = self._calc_cost(model, result["input_tokens"], result["output_tokens"])
+                parsed = extract_json(result["text"])
 
-        # Пытаемся извлечь JSON
-        response = response.strip()
+                response = LLMResponse(
+                    success=parsed is not None,
+                    data=parsed,
+                    raw_text=result["text"],
+                    model=model,
+                    input_tokens=result["input_tokens"],
+                    output_tokens=result["output_tokens"],
+                    cost_usd=round(cost, 6),
+                    latency_ms=latency,
+                    retries=attempt,
+                    error="Failed to parse JSON from LLM response" if parsed is None else None,
+                )
 
-        # Убираем markdown code blocks
-        if response.startswith('```'):
-            lines = response.split('\n')
-            json_lines = []
-            in_block = False
-            for line in lines:
-                if line.startswith('```'):
-                    in_block = not in_block
-                    continue
-                if in_block or not line.startswith('```'):
-                    json_lines.append(line)
-            response = '\n'.join(json_lines)
+                self.usage.record(response)
 
-        # Ищем JSON объект
-        start = response.find('{')
-        end = response.rfind('}')
-        if start != -1 and end != -1:
-            response = response[start:end + 1]
+                logger.info(
+                    f"LLM [{task_name}] model={model} "
+                    f"tokens={result['input_tokens']}+{result['output_tokens']} "
+                    f"cost=${cost:.4f} latency={latency}ms attempt={attempt} ok={response.success}"
+                )
 
-        return json.loads(response)
+                return response
+
+            except httpx.TimeoutException:
+                last_error = f"Timeout after {self.timeout}s"
+                logger.warning(f"LLM [{task_name}] timeout (attempt {attempt + 1})")
+            except httpx.HTTPStatusError as e:
+                last_error = f"HTTP {e.response.status_code}"
+                logger.warning(f"LLM [{task_name}] HTTP {e.response.status_code} (attempt {attempt + 1})")
+                if e.response.status_code == 429:
+                    await asyncio.sleep(2 ** (attempt + 1))
+                elif e.response.status_code < 500:
+                    break
+            except Exception as e:
+                last_error = str(e)
+                logger.error(f"LLM [{task_name}] error: {e}")
+
+            if attempt < self.max_retries:
+                await asyncio.sleep(0.5 * (attempt + 1))
+
+        error_response = LLMResponse(
+            success=False,
+            error=last_error or "Max retries exceeded",
+            latency_ms=int((time.time() - start_time) * 1000),
+            retries=self.max_retries,
+        )
+        self.usage.record(error_response)
+        return error_response
+
+    # ============== Provider Calls ==============
+
+    async def _call_anthropic(self, model, system, user, max_tokens, temperature) -> dict:
+        async with httpx.AsyncClient(timeout=self.timeout) as client:
+            resp = await client.post(
+                "https://api.anthropic.com/v1/messages",
+                headers={
+                    "x-api-key": self.anthropic_key,
+                    "anthropic-version": "2023-06-01",
+                    "content-type": "application/json",
+                },
+                json={
+                    "model": model,
+                    "max_tokens": max_tokens,
+                    "temperature": temperature,
+                    "system": system,
+                    "messages": [{"role": "user", "content": user}],
+                },
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            return {
+                "text": data["content"][0]["text"],
+                "input_tokens": data["usage"]["input_tokens"],
+                "output_tokens": data["usage"]["output_tokens"],
+            }
+
+    async def _call_openai(self, model, system, user, max_tokens, temperature) -> dict:
+        async with httpx.AsyncClient(timeout=self.timeout) as client:
+            resp = await client.post(
+                "https://api.openai.com/v1/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {self.openai_key}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "model": model,
+                    "max_tokens": max_tokens,
+                    "temperature": temperature,
+                    "response_format": {"type": "json_object"},
+                    "messages": [
+                        {"role": "system", "content": system},
+                        {"role": "user", "content": user},
+                    ],
+                },
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            usage = data.get("usage", {})
+            return {
+                "text": data["choices"][0]["message"]["content"],
+                "input_tokens": usage.get("prompt_tokens", 0),
+                "output_tokens": usage.get("completion_tokens", 0),
+            }
