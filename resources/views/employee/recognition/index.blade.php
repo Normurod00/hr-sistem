@@ -5,393 +5,183 @@
 
 @section('content')
 <style>
-    .award-card {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        border-radius: 16px;
-        padding: 24px;
-        color: white;
-        position: relative;
-        overflow: hidden;
-    }
-    .award-card::before {
-        content: '';
-        position: absolute;
-        top: -50%;
-        right: -50%;
-        width: 100%;
-        height: 100%;
-        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
-    }
-    .award-card.gold { background: linear-gradient(135deg, #f5af19 0%, #f12711 100%); }
-    .award-card.silver { background: linear-gradient(135deg, #bdc3c7 0%, #2c3e50 100%); }
-    .award-card.bronze { background: linear-gradient(135deg, #cd7f32 0%, #8b4513 100%); }
+    .recog-stats { display:flex; gap:16px; margin-bottom:24px; flex-wrap:wrap; }
+    .recog-stat { flex:1; min-width:180px; padding:20px; background:var(--panel); border:1px solid var(--br); border-radius:14px; display:flex; align-items:center; gap:14px; }
+    .recog-stat .icon { width:48px; height:48px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:1.2rem; flex-shrink:0; }
+    .recog-stat .info .value { font-size:22px; font-weight:800; color:var(--fg-1); }
+    .recog-stat .info .label { font-size:12px; color:var(--fg-3); }
+    .recog-stat.cta { background:linear-gradient(135deg, #667eea 0%, #764ba2 100%); border:none; text-decoration:none; color:#fff; transition:all 0.2s; }
+    .recog-stat.cta:hover { transform:translateY(-2px); box-shadow:0 6px 20px rgba(102,126,234,0.3); }
+    .recog-stat.cta .icon { background:rgba(255,255,255,0.2); }
+    .recog-stat.cta .info .value { color:#fff; }
+    .recog-stat.cta .info .label { color:rgba(255,255,255,0.8); }
 
-    .award-avatar {
-        width: 80px;
-        height: 80px;
-        border-radius: 50%;
-        border: 4px solid rgba(255,255,255,0.3);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: rgba(255,255,255,0.2);
-        font-size: 32px;
-        font-weight: bold;
-    }
-    .award-title { font-size: 14px; opacity: 0.9; margin-bottom: 4px; }
-    .award-name { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
-    .award-position { font-size: 13px; opacity: 0.8; }
+    .awards-row { display:grid; grid-template-columns:repeat(3, 1fr); gap:16px; margin-bottom:24px; }
+    @media(max-width:768px) { .awards-row { grid-template-columns:1fr; } }
+    .award-card { border-radius:16px; padding:24px; color:#fff; position:relative; overflow:hidden; min-height:140px; }
+    .award-card::before { content:''; position:absolute; top:-50%; right:-50%; width:100%; height:100%; background:radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%); }
+    .award-card.gold { background:linear-gradient(135deg, #f5af19, #f12711); }
+    .award-card.silver { background:linear-gradient(135deg, #a8b8c8, #4a6274); }
+    .award-card.bronze { background:linear-gradient(135deg, #cd7f32, #8b4513); }
+    .award-card .award-header { font-size:13px; opacity:0.9; margin-bottom:12px; display:flex; align-items:center; gap:6px; }
+    .award-card .award-avatar { width:60px; height:60px; border-radius:50%; border:3px solid rgba(255,255,255,0.3); display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.2); font-size:24px; font-weight:700; flex-shrink:0; }
+    .award-card .award-name { font-size:18px; font-weight:700; }
+    .award-card .award-sub { font-size:12px; opacity:0.8; }
+    .award-card .empty-award { text-align:center; padding:10px 0; opacity:0.6; }
+    .award-card .empty-award i { font-size:28px; opacity:0.5; margin-bottom:8px; display:block; }
 
-    .leaderboard-item {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 12px 16px;
-        border-radius: 10px;
-        transition: all 0.2s;
-    }
-    .leaderboard-item:hover { background: #f8f9fa; }
-    .leaderboard-rank {
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 700;
-        font-size: 14px;
-    }
-    .rank-1 { background: linear-gradient(135deg, #FFD700, #FFA500); color: white; }
-    .rank-2 { background: linear-gradient(135deg, #C0C0C0, #A0A0A0); color: white; }
-    .rank-3 { background: linear-gradient(135deg, #CD7F32, #8B4513); color: white; }
-    .rank-default { background: #e9ecef; color: #495057; }
+    .section-card { background:var(--panel); border:1px solid var(--br); border-radius:14px; overflow:hidden; }
+    .section-card .head { padding:16px 20px; border-bottom:1px solid var(--br); display:flex; justify-content:space-between; align-items:center; }
+    .section-card .head h6 { margin:0; font-weight:700; color:var(--fg-1); font-size:15px; }
+    .section-card .head a { font-size:13px; color:var(--accent); text-decoration:none; font-weight:500; }
 
-    .leaderboard-avatar {
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, #667eea, #764ba2);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-weight: 600;
-    }
-    .leaderboard-info { flex: 1; }
-    .leaderboard-name { font-weight: 600; font-size: 14px; }
-    .leaderboard-dept { font-size: 12px; color: #6c757d; }
-    .leaderboard-points {
-        font-weight: 700;
-        font-size: 16px;
-        color: #667eea;
-    }
+    .lb-item { display:flex; align-items:center; gap:12px; padding:12px 20px; border-bottom:1px solid var(--br); transition:background 0.15s; }
+    .lb-item:last-child { border-bottom:none; }
+    .lb-item:hover { background:rgba(0,0,0,0.015); }
+    .lb-rank { width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:13px; flex-shrink:0; }
+    .lb-rank.r1 { background:linear-gradient(135deg, #FFD700, #FFA500); color:#fff; }
+    .lb-rank.r2 { background:linear-gradient(135deg, #C0C0C0, #A0A0A0); color:#fff; }
+    .lb-rank.r3 { background:linear-gradient(135deg, #CD7F32, #8B4513); color:#fff; }
+    .lb-rank.rn { background:var(--br); color:var(--fg-3); }
+    .lb-avatar { width:40px; height:40px; border-radius:50%; background:linear-gradient(135deg, #667eea, #764ba2); display:flex; align-items:center; justify-content:center; color:#fff; font-weight:600; font-size:14px; flex-shrink:0; }
+    .lb-info { flex:1; }
+    .lb-name { font-weight:600; font-size:14px; color:var(--fg-1); }
+    .lb-meta { font-size:12px; color:var(--fg-3); }
+    .lb-points { font-weight:700; font-size:16px; color:#667eea; }
 
-    .nomination-type-card {
-        text-align: center;
-        padding: 20px;
-        border-radius: 12px;
-        border: 2px solid #e9ecef;
-        transition: all 0.2s;
-        cursor: pointer;
-    }
-    .nomination-type-card:hover {
-        border-color: #667eea;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
-    }
-    .nomination-type-icon {
-        width: 56px;
-        height: 56px;
-        border-radius: 14px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin: 0 auto 12px;
-        font-size: 24px;
-        color: white;
-    }
-    .nomination-type-name { font-weight: 600; margin-bottom: 4px; }
-    .nomination-type-points { font-size: 12px; color: #6c757d; }
+    .nom-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(160px, 1fr)); gap:12px; padding:16px 20px; }
+    .nom-card { text-align:center; padding:20px 12px; border:1px solid var(--br); border-radius:12px; transition:all 0.2s; text-decoration:none; color:inherit; display:block; }
+    .nom-card:hover { border-color:#667eea; transform:translateY(-2px); box-shadow:0 4px 12px rgba(102,126,234,0.12); }
+    .nom-card .nom-icon { width:52px; height:52px; border-radius:14px; display:flex; align-items:center; justify-content:center; margin:0 auto 10px; font-size:22px; color:#fff; }
+    .nom-card .nom-name { font-weight:600; font-size:13px; color:var(--fg-1); margin-bottom:4px; }
+    .nom-card .nom-pts { font-size:11px; color:var(--fg-3); }
+
+    .empty-block { text-align:center; padding:40px 20px; color:var(--fg-3); }
+    .empty-block i { font-size:40px; opacity:0.15; display:block; margin-bottom:8px; }
+
+    .recent-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:12px; padding:16px 20px; }
+    .recent-card { display:flex; align-items:center; gap:12px; padding:14px 16px; background:rgba(0,0,0,0.015); border-radius:12px; }
+    .recent-card .name { font-weight:600; font-size:14px; color:var(--fg-1); }
+    .recent-card .award-label { font-size:12px; color:var(--fg-3); }
 </style>
 
-<!-- Stats Row -->
-<div class="row g-4 mb-4">
-    <div class="col-md-6 col-lg-3">
-        <div class="stat-card">
-            <div class="d-flex align-items-center gap-3 mb-3">
-                <div class="stat-card-icon primary">
-                    <i class="bi bi-trophy-fill"></i>
-                </div>
-                <div>
-                    <div class="stat-label">Номинации за месяц</div>
-                    <div class="stat-value">{{ $stats['total_nominations_this_month'] }}</div>
-                </div>
-            </div>
-            <div class="text-muted small">
-                {{ $stats['approved_nominations_this_month'] }} подтверждённых
-            </div>
-        </div>
+{{-- Stats --}}
+<div class="recog-stats">
+    <div class="recog-stat">
+        <div class="icon" style="background:rgba(102,126,234,0.1);color:#667eea;"><i class="fa-solid fa-trophy"></i></div>
+        <div class="info"><div class="value">{{ $stats['total_nominations_this_month'] }}</div><div class="label">Номинации за месяц</div></div>
     </div>
-
-    <div class="col-md-6 col-lg-3">
-        <div class="stat-card">
-            <div class="d-flex align-items-center gap-3 mb-3">
-                <div class="stat-card-icon warning">
-                    <i class="bi bi-hourglass-split"></i>
-                </div>
-                <div>
-                    <div class="stat-label">Ожидание</div>
-                    <div class="stat-value">{{ $stats['pending_nominations'] }}</div>
-                </div>
-            </div>
-            <div class="text-muted small">
-                Номинации на рассмотрении
-            </div>
-        </div>
+    <div class="recog-stat">
+        <div class="icon" style="background:rgba(245,158,11,0.1);color:#f59e0b;"><i class="fa-solid fa-hourglass-half"></i></div>
+        <div class="info"><div class="value">{{ $stats['pending_nominations'] }}</div><div class="label">На рассмотрении</div></div>
     </div>
-
-    <div class="col-md-6 col-lg-3">
-        <div class="stat-card">
-            <div class="d-flex align-items-center gap-3 mb-3">
-                <div class="stat-card-icon success">
-                    <i class="bi bi-people-fill"></i>
-                </div>
-                <div>
-                    <div class="stat-label">Активные сотрудники</div>
-                    <div class="stat-value">{{ $stats['active_employees'] }}</div>
-                </div>
-            </div>
-            <div class="text-muted small">
-                Сотрудники с баллами
-            </div>
-        </div>
+    <div class="recog-stat">
+        <div class="icon" style="background:rgba(34,197,94,0.1);color:#22c55e;"><i class="fa-solid fa-users"></i></div>
+        <div class="info"><div class="value">{{ $stats['active_employees'] }}</div><div class="label">С баллами</div></div>
     </div>
+    <a href="{{ route('employee.recognition.nominate') }}" class="recog-stat cta">
+        <div class="icon"><i class="fa-solid fa-plus"></i></div>
+        <div class="info"><div class="value">Номинировать</div><div class="label">Новая номинация</div></div>
+    </a>
+</div>
 
-    <div class="col-md-6 col-lg-3">
-        <a href="{{ route('employee.recognition.nominate') }}" class="text-decoration-none">
-            <div class="stat-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
-                <div class="d-flex align-items-center gap-3">
-                    <div class="stat-card-icon" style="background: rgba(255,255,255,0.2);">
-                        <i class="bi bi-plus-lg"></i>
-                    </div>
+{{-- Awards --}}
+<div class="awards-row">
+    @php
+        $awards = [
+            ['key' => 'employee_of_month', 'label' => 'Сотрудник месяца', 'class' => 'gold', 'icon' => 'fa-award'],
+            ['key' => 'employee_of_quarter', 'label' => 'Сотрудник квартала', 'class' => 'silver', 'icon' => 'fa-trophy'],
+            ['key' => 'employee_of_year', 'label' => 'Сотрудник года', 'class' => 'bronze', 'icon' => 'fa-gem'],
+        ];
+    @endphp
+    @foreach($awards as $a)
+        <div class="award-card {{ $a['class'] }}">
+            <div class="award-header"><i class="fa-solid {{ $a['icon'] }}"></i> {{ $a['label'] }}</div>
+            @if($stats[$a['key']])
+                <div style="display:flex;align-items:center;gap:14px;">
+                    <div class="award-avatar">{{ strtoupper(substr($stats[$a['key']]->user->name ?? 'U', 0, 1)) }}</div>
                     <div>
-                        <div class="stat-label" style="color: rgba(255,255,255,0.8);">Новая номинация</div>
-                        <div class="stat-value">Номинировать</div>
+                        <div class="award-name">{{ $stats[$a['key']]->user->name ?? 'Unknown' }}</div>
+                        <div class="award-sub">{{ $stats[$a['key']]->period_label ?? '' }}</div>
                     </div>
                 </div>
-            </div>
-        </a>
-    </div>
+            @else
+                <div class="empty-award">
+                    <i class="fa-solid fa-hourglass-half"></i>
+                    Ещё не выбран
+                </div>
+            @endif
+        </div>
+    @endforeach
 </div>
 
-<!-- Awards Section -->
-<div class="row g-4 mb-4">
-    @if($stats['employee_of_month'])
-    <div class="col-md-4">
-        <div class="award-card gold">
-            <div class="award-title">
-                <i class="bi bi-award-fill me-1"></i> Сотрудник месяца
-            </div>
-            <div class="d-flex align-items-center gap-3 mt-3">
-                <div class="award-avatar">
-                    {{ strtoupper(substr($stats['employee_of_month']->user->name ?? 'U', 0, 1)) }}
-                </div>
-                <div>
-                    <div class="award-name">{{ $stats['employee_of_month']->user->name ?? 'Unknown' }}</div>
-                    <div class="award-position">{{ $stats['employee_of_month']->period_label }}</div>
-                </div>
-            </div>
+{{-- Leaderboard + Nomination Types --}}
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:24px;">
+    {{-- Leaderboard --}}
+    <div class="section-card">
+        <div class="head">
+            <h6><i class="fa-solid fa-ranking-star me-2" style="color:#667eea;"></i>Рейтинг за месяц</h6>
+            <a href="{{ route('employee.recognition.leaderboard') }}">Все</a>
         </div>
-    </div>
-    @else
-    <div class="col-md-4">
-        <div class="award-card" style="opacity: 0.6;">
-            <div class="award-title">
-                <i class="bi bi-award-fill me-1"></i> Сотрудник месяца
+        @forelse($leaderboardMonth as $item)
+            <div class="lb-item">
+                <div class="lb-rank {{ $item['rank'] <= 3 ? 'r'.$item['rank'] : 'rn' }}">{{ $item['rank'] }}</div>
+                <div class="lb-avatar">{{ strtoupper(substr($item['user']->name ?? 'U', 0, 1)) }}</div>
+                <div class="lb-info">
+                    <div class="lb-name">{{ $item['user']->name ?? 'Unknown' }}</div>
+                    <div class="lb-meta"><i class="fa-solid fa-trophy me-1" style="color:#f59e0b;"></i>{{ $item['awards_won'] }} наград</div>
+                </div>
+                <div class="lb-points">{{ number_format($item['points']) }}</div>
             </div>
-            <div class="text-center mt-4">
-                <i class="bi bi-hourglass-split" style="font-size: 32px; opacity: 0.5;"></i>
-                <div class="mt-2" style="opacity: 0.7;">Ещё не выбран</div>
-            </div>
-        </div>
+        @empty
+            <div class="empty-block"><i class="fa-solid fa-ranking-star"></i><p>Нет данных за этот месяц</p></div>
+        @endforelse
     </div>
-    @endif
 
-    @if($stats['employee_of_quarter'])
-    <div class="col-md-4">
-        <div class="award-card silver">
-            <div class="award-title">
-                <i class="bi bi-trophy-fill me-1"></i> Сотрудник квартала
-            </div>
-            <div class="d-flex align-items-center gap-3 mt-3">
-                <div class="award-avatar">
-                    {{ strtoupper(substr($stats['employee_of_quarter']->user->name ?? 'U', 0, 1)) }}
-                </div>
-                <div>
-                    <div class="award-name">{{ $stats['employee_of_quarter']->user->name ?? 'Unknown' }}</div>
-                    <div class="award-position">{{ $stats['employee_of_quarter']->period_label }}</div>
-                </div>
-            </div>
+    {{-- Nomination Types --}}
+    <div class="section-card">
+        <div class="head">
+            <h6><i class="fa-solid fa-star me-2" style="color:#f59e0b;"></i>Типы номинаций</h6>
         </div>
-    </div>
-    @else
-    <div class="col-md-4">
-        <div class="award-card silver" style="opacity: 0.6;">
-            <div class="award-title">
-                <i class="bi bi-trophy-fill me-1"></i> Сотрудник квартала
-            </div>
-            <div class="text-center mt-4">
-                <i class="bi bi-hourglass-split" style="font-size: 32px; opacity: 0.5;"></i>
-                <div class="mt-2" style="opacity: 0.7;">Ещё не выбран</div>
-            </div>
-        </div>
-    </div>
-    @endif
-
-    @if($stats['employee_of_year'])
-    <div class="col-md-4">
-        <div class="award-card bronze">
-            <div class="award-title">
-                <i class="bi bi-gem me-1"></i> Сотрудник года
-            </div>
-            <div class="d-flex align-items-center gap-3 mt-3">
-                <div class="award-avatar">
-                    {{ strtoupper(substr($stats['employee_of_year']->user->name ?? 'U', 0, 1)) }}
-                </div>
-                <div>
-                    <div class="award-name">{{ $stats['employee_of_year']->user->name ?? 'Unknown' }}</div>
-                    <div class="award-position">{{ $stats['employee_of_year']->period_label }}</div>
-                </div>
-            </div>
-        </div>
-    </div>
-    @else
-    <div class="col-md-4">
-        <div class="award-card bronze" style="opacity: 0.6;">
-            <div class="award-title">
-                <i class="bi bi-gem me-1"></i> Сотрудник года
-            </div>
-            <div class="text-center mt-4">
-                <i class="bi bi-hourglass-split" style="font-size: 32px; opacity: 0.5;"></i>
-                <div class="mt-2" style="opacity: 0.7;">Ещё не выбран</div>
-            </div>
-        </div>
-    </div>
-    @endif
-</div>
-
-<div class="row g-4">
-    <!-- Leaderboard -->
-    <div class="col-lg-6">
-        <div class="card h-100">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">
-                    <i class="bi bi-bar-chart-fill text-primary me-2"></i>
-                    Рейтинг за месяц
-                </h5>
-                <a href="{{ route('employee.recognition.leaderboard') }}" class="btn btn-sm btn-outline-primary">
-                    Все
-                </a>
-            </div>
-            <div class="card-body p-0">
-                @forelse($leaderboardMonth as $item)
-                <div class="leaderboard-item">
-                    <div class="leaderboard-rank {{ $item['rank'] <= 3 ? 'rank-' . $item['rank'] : 'rank-default' }}">
-                        {{ $item['rank'] }}
-                    </div>
-                    <div class="leaderboard-avatar">
-                        {{ strtoupper(substr($item['user']->name ?? 'U', 0, 1)) }}
-                    </div>
-                    <div class="leaderboard-info">
-                        <div class="leaderboard-name">{{ $item['user']->name ?? 'Unknown' }}</div>
-                        <div class="leaderboard-dept">
-                            <i class="bi bi-trophy-fill text-warning me-1"></i>
-                            {{ $item['awards_won'] }} наград
+        @if(count($stats['nomination_types'] ?? []) > 0)
+            <div class="nom-grid">
+                @foreach($stats['nomination_types'] as $type)
+                    <a href="{{ route('employee.recognition.nominate', ['type' => $type->id]) }}" class="nom-card">
+                        <div class="nom-icon" style="background:{{ $type->color }};">
+                            <i class="bi {{ $type->icon }}"></i>
                         </div>
-                    </div>
-                    <div class="leaderboard-points">
-                        {{ number_format($item['points']) }}
-                        <small class="text-muted">балл</small>
-                    </div>
-                </div>
-                @empty
-                <div class="text-center py-5 text-muted">
-                    <i class="bi bi-inbox" style="font-size: 48px; opacity: 0.3;"></i>
-                    <div class="mt-2">Нет данных</div>
-                </div>
-                @endforelse
+                        <div class="nom-name">{{ $type->name }}</div>
+                        <div class="nom-pts"><i class="fa-solid fa-coins me-1"></i>{{ $type->points_reward }} балл</div>
+                    </a>
+                @endforeach
             </div>
-        </div>
-    </div>
-
-    <!-- Nomination Types -->
-    <div class="col-lg-6">
-        <div class="card h-100">
-            <div class="card-header">
-                <h5 class="mb-0">
-                    <i class="bi bi-stars text-warning me-2"></i>
-                    Типы номинаций
-                </h5>
-            </div>
-            <div class="card-body">
-                <div class="row g-3">
-                    @forelse($stats['nomination_types'] as $type)
-                    <div class="col-6">
-                        <a href="{{ route('employee.recognition.nominate', ['type' => $type->id]) }}" class="text-decoration-none">
-                            <div class="nomination-type-card">
-                                <div class="nomination-type-icon" style="background: {{ $type->color }};">
-                                    <i class="bi {{ $type->icon }}"></i>
-                                </div>
-                                <div class="nomination-type-name text-dark">{{ $type->name }}</div>
-                                <div class="nomination-type-points">
-                                    <i class="bi bi-coin me-1"></i>{{ $type->points_reward }} балл
-                                </div>
-                            </div>
-                        </a>
-                    </div>
-                    @empty
-                    <div class="col-12 text-center text-muted py-4">
-                        Типы номинаций отсутствуют
-                    </div>
-                    @endforelse
-                </div>
-            </div>
-        </div>
+        @else
+            <div class="empty-block"><i class="fa-solid fa-star"></i><p>Типы номинаций ещё не настроены</p></div>
+        @endif
     </div>
 </div>
 
-<!-- Recent Awards -->
+{{-- Recent Awards --}}
 @if($recentAwards->count() > 0)
-<div class="card mt-4">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="mb-0">
-            <i class="bi bi-clock-history text-info me-2"></i>
-            Последние награды
-        </h5>
-        <a href="{{ route('employee.recognition.hall-of-fame') }}" class="btn btn-sm btn-outline-info">
-            Зал славы
-        </a>
-    </div>
-    <div class="card-body">
-        <div class="row g-3">
+    <div class="section-card">
+        <div class="head">
+            <h6><i class="fa-solid fa-clock-rotate-left me-2" style="color:#06b6d4;"></i>Последние награды</h6>
+            <a href="{{ route('employee.recognition.hall-of-fame') }}">Зал славы</a>
+        </div>
+        <div class="recent-grid">
             @foreach($recentAwards as $award)
-            <div class="col-md-6 col-lg-4">
-                <div class="d-flex align-items-center gap-3 p-3 rounded-3" style="background: #f8f9fa;">
-                    <div class="leaderboard-avatar" style="width: 48px; height: 48px;">
-                        {{ strtoupper(substr($award->user->name ?? 'U', 0, 1)) }}
-                    </div>
+                <div class="recent-card">
+                    <div class="lb-avatar" style="width:44px;height:44px;">{{ strtoupper(substr($award->user->name ?? 'U', 0, 1)) }}</div>
                     <div>
-                        <div class="fw-semibold">{{ $award->user->name ?? 'Unknown' }}</div>
-                        <div class="small text-muted">
-                            <i class="bi {{ $award->award_type->icon() }} me-1" style="color: {{ $award->award_type->color() }};"></i>
+                        <div class="name">{{ $award->user->name ?? 'Unknown' }}</div>
+                        <div class="award-label">
+                            <i class="bi {{ $award->award_type->icon() }}" style="color:{{ $award->award_type->color() }};"></i>
                             {{ $award->award_type->label() }}
                         </div>
                     </div>
                 </div>
-            </div>
             @endforeach
         </div>
     </div>
-</div>
 @endif
 @endsection
