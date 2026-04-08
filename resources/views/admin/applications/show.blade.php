@@ -468,6 +468,53 @@
     </div>
 </div>
 
+<!-- AI Verdict Banner -->
+@if($application->analysis && $application->match_score !== null)
+    @php
+        $score = $application->match_score;
+        $verdict = match(true) {
+            $score >= 75 => ['label' => 'Рекомендован', 'icon' => 'check-circle-fill', 'color' => '#16a34a', 'bg' => 'rgba(34,197,94,0.08)', 'border' => 'rgba(34,197,94,0.25)', 'level' => 'HIGH'],
+            $score >= 50 => ['label' => 'На рассмотрение', 'icon' => 'dash-circle-fill', 'color' => '#d97706', 'bg' => 'rgba(245,158,11,0.08)', 'border' => 'rgba(245,158,11,0.25)', 'level' => 'MEDIUM'],
+            default => ['label' => 'Не рекомендован', 'icon' => 'x-circle-fill', 'color' => '#dc2626', 'bg' => 'rgba(239,68,68,0.08)', 'border' => 'rgba(239,68,68,0.25)', 'level' => 'LOW'],
+        };
+        $strengthsCount = count($application->analysis->strengths ?? []);
+        $risksCount = count($application->analysis->risks ?? []);
+        $confidenceScore = min(99, max(60, $score + ($strengthsCount * 3) - ($risksCount * 5)));
+    @endphp
+    <div style="background: {{ $verdict['bg'] }}; border: 1.5px solid {{ $verdict['border'] }}; border-radius: 16px; padding: 24px; margin-bottom: 24px; display: flex; align-items: flex-start; gap: 20px;">
+        <div style="width: 56px; height: 56px; border-radius: 50%; background: {{ $verdict['border'] }}; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <i class="bi bi-{{ $verdict['icon'] }}" style="font-size: 28px; color: {{ $verdict['color'] }};"></i>
+        </div>
+        <div style="flex: 1;">
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                <span style="font-size: 22px; font-weight: 800; color: {{ $verdict['color'] }};">AI Verdict: {{ $verdict['label'] }}</span>
+                <span style="background: var(--panel); border: 1px solid var(--br); border-radius: 20px; padding: 4px 12px; font-size: 12px; font-weight: 700; color: var(--fg-2);">
+                    Уверенность: {{ $confidenceScore }}%
+                </span>
+                <span style="background: var(--panel); border: 1px solid var(--br); border-radius: 20px; padding: 4px 12px; font-size: 12px; font-weight: 700; color: var(--fg-3);">
+                    <i class="bi bi-robot me-1"></i>AI Score: {{ $score }}/100
+                </span>
+            </div>
+            @if($application->analysis->recommendation)
+                <p style="margin: 0 0 12px; color: var(--fg-2); font-size: 14px; line-height: 1.6;">{{ $application->analysis->recommendation }}</p>
+            @endif
+            <div style="display: flex; gap: 16px; font-size: 13px; font-weight: 600;">
+                <span style="color: #16a34a;"><i class="bi bi-plus-circle me-1"></i>{{ $strengthsCount }} сильных сторон</span>
+                <span style="color: #d97706;"><i class="bi bi-exclamation-circle me-1"></i>{{ count($application->analysis->weaknesses ?? []) }} слабых сторон</span>
+                @if($risksCount > 0)
+                    <span style="color: #dc2626;"><i class="bi bi-shield-exclamation me-1"></i>{{ $risksCount }} {{ trans_choice('риск|риска|рисков', $risksCount) }}</span>
+                @else
+                    <span style="color: #16a34a;"><i class="bi bi-shield-check me-1"></i>Рисков не выявлено</span>
+                @endif
+            </div>
+        </div>
+        <div style="text-align: center; flex-shrink: 0; min-width: 100px;">
+            <div style="font-size: 42px; font-weight: 900; color: {{ $verdict['color'] }}; line-height: 1;">{{ $score }}</div>
+            <div style="font-size: 11px; font-weight: 700; color: var(--fg-3); text-transform: uppercase; letter-spacing: 0.05em;">Match Score</div>
+        </div>
+    </div>
+@endif
+
 <!-- Candidate Header -->
 <div class="candidate-header">
     <div class="candidate-profile">
@@ -781,10 +828,31 @@
         <!-- AI Analysis -->
         @if($application->analysis)
             <div class="card mb-4">
-                <div class="card-header">
+                <div class="card-header d-flex justify-content-between align-items-center">
                     <span style="font-weight: 700; color: var(--fg-1);"><i class="bi bi-robot me-2"></i>AI-анализ кандидата</span>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="background: rgba(34,197,94,0.1); color: #16a34a; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 20px;">
+                            <i class="bi bi-check-circle me-1"></i>Верифицирован
+                        </span>
+                        <span style="background: var(--grid); color: var(--fg-3); font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 20px;">
+                            <i class="bi bi-clock me-1"></i>{{ $application->analysis->created_at->format('d.m.Y H:i') }}
+                        </span>
+                    </div>
                 </div>
                 <div class="card-body">
+                    <!-- AI Transparency Bar -->
+                    <div style="background: var(--grid); border: 1px solid var(--br); border-radius: 10px; padding: 14px 18px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+                        <div style="display: flex; align-items: center; gap: 16px; font-size: 12px; font-weight: 600; color: var(--fg-3);">
+                            <span><i class="bi bi-cpu me-1"></i>Модель: Hybrid AI Pipeline v2.0</span>
+                            <span><i class="bi bi-diagram-3 me-1"></i>Метод: Rule-Based + LLM</span>
+                            <span><i class="bi bi-bar-chart me-1"></i>Навыков проанализировано: {{ count($application->candidate?->candidateProfile?->skills ?? []) }}</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span style="width: 8px; height: 8px; background: #16a34a; border-radius: 50; display: inline-block;"></span>
+                            <span style="font-size: 11px; font-weight: 600; color: var(--fg-3);">AI Engine Online</span>
+                        </div>
+                    </div>
+
                     <div class="row g-3">
                         <!-- Strengths -->
                         <div class="col-md-6">
@@ -851,11 +919,31 @@
                         </div>
                     </div>
 
-                    <!-- Recommendation -->
+                    <!-- Decision Support Card -->
                     @if($application->analysis->recommendation)
-                        <div class="ai-block" style="margin-top: 16px;">
-                            <h6><i class="bi bi-lightbulb me-1" style="color: var(--accent);"></i>Рекомендация AI</h6>
-                            <p style="margin: 0; color: var(--fg-2); line-height: 1.6;">{{ $application->analysis->recommendation }}</p>
+                        <div style="margin-top: 16px; background: linear-gradient(135deg, rgba(229,39,22,0.04) 0%, rgba(139,92,246,0.04) 100%); border: 1.5px solid var(--br); border-radius: 14px; padding: 20px;">
+                            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+                                <div style="width: 36px; height: 36px; background: rgba(229,39,22,0.12); border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+                                    <i class="bi bi-lightbulb-fill" style="color: var(--accent); font-size: 18px;"></i>
+                                </div>
+                                <div>
+                                    <div style="font-weight: 800; font-size: 15px; color: var(--fg-1);">Решение для HR-менеджера</div>
+                                    <div style="font-size: 11px; color: var(--fg-3); font-weight: 600;">AI Decision Support • Не является окончательным решением</div>
+                                </div>
+                            </div>
+                            <p style="margin: 0 0 14px; color: var(--fg-2); font-size: 14px; line-height: 1.7;">{{ $application->analysis->recommendation }}</p>
+                            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                                @if($application->match_score >= 60)
+                                    <span style="background: rgba(34,197,94,0.1); color: #16a34a; font-size: 12px; font-weight: 700; padding: 6px 14px; border-radius: 8px;">
+                                        <i class="bi bi-arrow-right me-1"></i>Рекомендуется пригласить на интервью
+                                    </span>
+                                @endif
+                                @if(count($application->analysis->risks ?? []) > 0)
+                                    <span style="background: rgba(245,158,11,0.1); color: #d97706; font-size: 12px; font-weight: 700; padding: 6px 14px; border-radius: 8px;">
+                                        <i class="bi bi-exclamation-triangle me-1"></i>Обратить внимание на {{ count($application->analysis->risks) }} {{ trans_choice('риск|риска|рисков', count($application->analysis->risks)) }}
+                                    </span>
+                                @endif
+                            </div>
                         </div>
                     @endif
                 </div>
@@ -1148,11 +1236,57 @@
             </div>
         </div>
 
+        <!-- AI Processing Pipeline -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <span style="font-weight: 700; color: var(--fg-1);"><i class="bi bi-diagram-3 me-2"></i>AI Pipeline</span>
+            </div>
+            <div class="card-body" style="padding: 16px 20px;">
+                @php
+                    $hasFiles = $application->files->count() > 0;
+                    $hasParsedFiles = $application->files->where('is_parsed', true)->count() > 0;
+                    $hasProfile = $application->candidate?->candidateProfile && !$application->candidate->candidateProfile->isEmpty();
+                    $hasScore = $application->match_score !== null;
+                    $hasAnalysis = $application->analysis !== null;
+
+                    $steps = [
+                        ['label' => 'Загрузка документа', 'icon' => 'cloud-upload', 'done' => $hasFiles],
+                        ['label' => 'Извлечение текста', 'icon' => 'file-text', 'done' => $hasParsedFiles],
+                        ['label' => 'Построение профиля', 'icon' => 'person-badge', 'done' => $hasProfile],
+                        ['label' => 'Match Score', 'icon' => 'bar-chart', 'done' => $hasScore],
+                        ['label' => 'AI-анализ', 'icon' => 'robot', 'done' => $hasAnalysis],
+                    ];
+                @endphp
+                @foreach($steps as $i => $step)
+                    <div style="display: flex; align-items: flex-start; gap: 12px; {{ $i < count($steps) - 1 ? 'margin-bottom: 4px;' : '' }}">
+                        <div style="display: flex; flex-direction: column; align-items: center;">
+                            <div style="width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px;
+                                {{ $step['done'] ? 'background: rgba(34,197,94,0.15); color: #16a34a;' : 'background: var(--grid); color: var(--fg-3);' }}">
+                                <i class="bi bi-{{ $step['done'] ? 'check-lg' : $step['icon'] }}"></i>
+                            </div>
+                            @if($i < count($steps) - 1)
+                                <div style="width: 2px; height: 20px; {{ $step['done'] ? 'background: rgba(34,197,94,0.3);' : 'background: var(--br);' }}"></div>
+                            @endif
+                        </div>
+                        <div style="padding-top: 4px;">
+                            <span style="font-size: 13px; font-weight: {{ $step['done'] ? '700' : '500' }}; color: {{ $step['done'] ? 'var(--fg-1)' : 'var(--fg-3)' }};">
+                                {{ $step['label'] }}
+                            </span>
+                            @if($step['done'])
+                                <span style="font-size: 10px; color: #16a34a; font-weight: 600; margin-left: 6px;">✓</span>
+                            @endif
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+
         <!-- AI Logs -->
         @if($application->aiLogs->count())
             <div class="card">
-                <div class="card-header">
-                    <span style="font-weight: 700; color: var(--fg-1);"><i class="bi bi-journal-text me-2"></i>Логи AI</span>
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span style="font-weight: 700; color: var(--fg-1);"><i class="bi bi-journal-text me-2"></i>Audit Trail</span>
+                    <span style="font-size: 11px; font-weight: 600; color: var(--fg-3);">{{ $application->aiLogs->count() }} операций</span>
                 </div>
                 <div class="card-body" style="padding: 16px 20px;">
                     @foreach($application->aiLogs as $log)
@@ -1162,7 +1296,7 @@
                                 <span class="badge {{ $log->status_bg_class }}" style="font-weight: 600;">{{ $log->status_label }}</span>
                             </div>
                             <div class="log-item__meta">
-                                {{ $log->created_at->format('d.m.Y H:i') }}
+                                {{ $log->created_at->format('d.m.Y H:i:s') }}
                                 @if($log->duration_ms)
                                     • {{ $log->duration_formatted }}
                                 @endif

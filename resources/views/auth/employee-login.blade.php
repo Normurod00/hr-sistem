@@ -31,7 +31,7 @@
                     required
                     autofocus
                     autocomplete="email"
-                    placeholder="employee@brb.uz"
+                    placeholder="employee@hr-system.uz"
                     style="width: 100%; padding: 14px 14px 14px 44px; border: 1px solid #D1D5DB; border-radius: 10px; font-size: 15px; transition: all 0.2s; box-sizing: border-box;"
                     onfocus="this.style.borderColor='#059669'; this.style.boxShadow='0 0 0 3px rgba(5, 150, 105, 0.1)';"
                     onblur="this.style.borderColor='#D1D5DB'; this.style.boxShadow='none';"

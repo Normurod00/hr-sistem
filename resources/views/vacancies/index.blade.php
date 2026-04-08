@@ -900,7 +900,7 @@
                         </div>
                         <div class="info-stat">
                             <i class="bi bi-globe"></i>
-                            <a href="https://brb.uz" target="_blank">brb.uz</a>
+                            <a href="#" target="_blank">hr-system.uz</a>
                         </div>
                     </div>
                 </div>

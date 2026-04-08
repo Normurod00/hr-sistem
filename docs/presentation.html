@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HR-System AI Platform — Taqdimot</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+  :root {
+    --accent: #E52716; --accent-light: #fff1f0; --bg: #ffffff; --bg2: #f8fafc;
+    --fg: #0f172a; --fg2: #475569; --fg3: #94a3b8; --border: #e2e8f0;
+    --green: #16a34a; --green-bg: #f0fdf4; --blue: #2563eb; --blue-bg: #eff6ff;
+    --purple: #7c3aed; --purple-bg: #f5f3ff; --orange: #d97706; --orange-bg: #fffbeb;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); color: var(--fg); }
+
+  .slide {
+    width: 100%; min-height: 100vh; display: flex; flex-direction: column;
+    justify-content: center; padding: 56px 72px; position: relative; overflow: hidden; background: var(--bg);
+  }
+  @media print {
+    .slide { page-break-after: always; min-height: 100vh; padding: 36px 48px; }
+    @page { size: landscape; margin: 0; }
+  }
+  .slide-num { position: absolute; bottom: 28px; right: 36px; font-size: 13px; color: var(--fg3); font-weight: 600; }
+  .slide-logo { position: absolute; bottom: 28px; left: 36px; font-size: 13px; color: var(--fg3); font-weight: 700; }
+
+  /* Title */
+  .slide.title { background: linear-gradient(135deg, #fafbff 0%, #f0f4ff 50%, #fef2f2 100%); }
+  .slide.title::before { content: ''; position: absolute; top: -200px; right: -100px; width: 600px; height: 600px; background: radial-gradient(circle, rgba(229,39,22,0.06) 0%, transparent 70%); border-radius: 50%; }
+  .title-badge { display: inline-flex; align-items: center; gap: 8px; background: var(--accent-light); border: 1px solid rgba(229,39,22,0.2); color: var(--accent); padding: 8px 24px; border-radius: 100px; font-size: 14px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 24px; position: relative; z-index: 1; }
+  .title h1 { font-size: 64px; font-weight: 900; line-height: 1.1; margin-bottom: 16px; position: relative; z-index: 1; }
+  .title h1 span { color: var(--accent); }
+  .title p { font-size: 22px; color: var(--fg2); max-width: 700px; line-height: 1.5; position: relative; z-index: 1; }
+
+  .slide h2 { font-size: 40px; font-weight: 800; margin-bottom: 6px; line-height: 1.2; }
+  .slide h2 span { color: var(--accent); }
+  .slide .subtitle { font-size: 17px; color: var(--fg2); margin-bottom: 32px; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+  .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 18px; }
+
+  .card { background: var(--bg); border: 1px solid var(--border); border-radius: 14px; padding: 24px; }
+  .card h3 { font-size: 16px; font-weight: 700; margin-bottom: 10px; display: flex; align-items: center; gap: 10px; }
+  .card h3 i { width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; }
+  .card p { color: var(--fg2); font-size: 14px; line-height: 1.6; }
+
+  .stat { text-align: center; padding: 28px 16px; background: var(--bg2); border: 1px solid var(--border); border-radius: 14px; }
+  .stat .number { font-size: 48px; font-weight: 900; line-height: 1; margin-bottom: 6px; }
+  .stat .label { font-size: 13px; color: var(--fg2); font-weight: 500; }
+  .stat .detail { font-size: 11px; color: var(--fg3); margin-top: 4px; }
+
+  .pipeline-row { display: flex; align-items: center; background: var(--bg2); border: 1px solid var(--border); border-radius: 14px; padding: 24px 16px; margin: 24px 0; }
+  .pipeline-step { flex: 1; text-align: center; }
+  .pipeline-step .dot { width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; margin: 0 auto 8px; }
+  .pipeline-step .name { font-size: 13px; font-weight: 700; }
+  .pipeline-step .time { font-size: 11px; color: var(--fg3); }
+  .pipeline-arrow { color: var(--fg3); font-size: 16px; flex-shrink: 0; padding: 0 2px; }
+
+  .compare-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .compare-table th { padding: 14px 18px; text-align: left; font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--fg3); border-bottom: 2px solid var(--border); background: var(--bg2); }
+  .compare-table td { padding: 12px 18px; border-bottom: 1px solid var(--border); }
+  .compare-table .old { color: var(--fg3); text-decoration: line-through; }
+  .compare-table .new { color: var(--green); font-weight: 700; }
+  .badge { display: inline-flex; padding: 4px 12px; border-radius: 8px; font-size: 12px; font-weight: 700; }
+  .badge.green { background: var(--green-bg); color: var(--green); }
+
+  .check-list { list-style: none; padding: 0; }
+  .check-list li { padding: 8px 0; font-size: 14px; display: flex; align-items: flex-start; gap: 10px; border-bottom: 1px solid var(--border); color: var(--fg2); }
+  .check-list li:last-child { border-bottom: none; }
+  .check-list li::before { content: '\F26A'; font-family: 'bootstrap-icons'; color: var(--green); font-size: 14px; flex-shrink: 0; margin-top: 2px; }
+  .check-list li strong { color: var(--fg); }
+
+  .quote-block { background: linear-gradient(135deg, rgba(229,39,22,0.03), rgba(139,92,246,0.03)); border-left: 4px solid var(--accent); border-radius: 0 12px 12px 0; padding: 24px 28px; margin: 20px 0; }
+  .quote-block p { font-size: 18px; font-weight: 500; font-style: italic; line-height: 1.6; }
+
+  .formula-bar { margin-top: 24px; background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 18px 24px; display: flex; align-items: center; justify-content: space-between; }
+  .formula-bar .ftitle { font-size: 12px; font-weight: 700; color: var(--fg3); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+  .formula-bar .formula { font-size: 18px; font-weight: 800; }
+
+  .divider { height: 1px; background: var(--border); margin: 28px 0; }
+  .slide.closing { background: linear-gradient(135deg, #fafbff 0%, #f0f4ff 50%, #fef2f2 100%); text-align: center; }
+  .closing-stats { display: flex; justify-content: center; gap: 48px; font-size: 14px; color: var(--fg2); }
+  .closing-stats .val { font-size: 36px; font-weight: 900; line-height: 1.2; }
+
+  /* Browser frame */
+  .browser { background: var(--bg); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.06); }
+  .browser .bar { background: var(--bg2); border-bottom: 1px solid var(--border); padding: 8px 14px; display: flex; align-items: center; gap: 10px; }
+  .browser .bar .dots { display: flex; gap: 5px; }
+  .browser .bar .dots span { width: 9px; height: 9px; border-radius: 50%; }
+  .browser .bar .dots span:nth-child(1) { background: #ef4444; }
+  .browser .bar .dots span:nth-child(2) { background: #f59e0b; }
+  .browser .bar .dots span:nth-child(3) { background: #22c55e; }
+  .browser .bar .url { flex: 1; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 4px 10px; font-size: 11px; color: var(--fg3); font-weight: 500; }
+  .browser img { width: 100%; display: block; }
+  .screen-label { margin-top: 10px; font-size: 12px; color: var(--fg3); font-weight: 600; text-align: center; }
+</style>
+</head>
+<body>
+
+<!-- ===== SLIDE 1: TITLE ===== -->
+<div class="slide title">
+  <div class="title-badge"><i class="bi bi-diamond-fill" style="font-size: 10px;"></i> Enterprise AI Platforma</div>
+  <h1>HR-<span>System</span></h1>
+  <p>Sun'iy intellektga asoslangan HR boshqaruv platformasi<br>Aqlli yollash &bull; Xodimlar tahlili &bull; Qaror qo'llab-quvvatlash</p>
+  <div style="margin-top: 48px; display: flex; gap: 32px; font-size: 14px; color: var(--fg3); position: relative; z-index: 1;">
+    <span>2026-yil, Aprel</span>
+    <span>&bull;</span>
+    <span>Maxfiy taqdimot</span>
+  </div>
+  <div class="slide-num">01</div>
+</div>
+
+<!-- ===== SLIDE 2: MUAMMO ===== -->
+<div class="slide content">
+  <h2><span>Muammo</span></h2>
+  <p class="subtitle">HR bo'limlari nomzodlarni saralashda jiddiy to'siqlarga duch kelmoqda</p>
+  <div class="grid-4">
+    <div class="stat">
+      <div class="number" style="color: var(--accent);">15-20</div>
+      <div class="label">daqiqa har bir rezyume</div>
+      <div class="detail">qo'lda saralash</div>
+    </div>
+    <div class="stat">
+      <div class="number" style="color: var(--orange);">30-50%</div>
+      <div class="label">arizalar ko'rib chiqilmaydi</div>
+      <div class="detail">HR imkoniyati cheklangan</div>
+    </div>
+    <div class="stat">
+      <div class="number" style="color: var(--purple);">3-5</div>
+      <div class="label">kun qisqa ro'yxat</div>
+      <div class="detail">o'rtacha saralash vaqti</div>
+    </div>
+    <div class="stat">
+      <div class="number" style="color: var(--blue);">0%</div>
+      <div class="label">izchillik</div>
+      <div class="detail">ko'rib chiquvchiga bog'liq</div>
+    </div>
+  </div>
+  <div class="quote-block" style="margin-top: 32px;">
+    <p>"Oyiga 200+ ariza bilan HR jamoamiz faqat dastlabki saralashga 50+ soat sarflaydi. Eng yaxshi nomzodlar tezroq javob beradigan raqobatchilarga yo'qotiladi."</p>
+  </div>
+  <div class="slide-num">02</div>
+  <div class="slide-logo">HR-System AI Platform</div>
+</div>
+
+<!-- ===== SLIDE 3: YECHIM + PIPELINE ===== -->
+<div class="slide content">
+  <h2><span>Yechim</span></h2>
+  <p class="subtitle">AI yordamida nomzodlarni 20 daqiqa emas, 30 soniyada saralash</p>
+  <div class="grid-4" style="margin-bottom: 24px;">
+    <div class="stat" style="background: var(--green-bg); border-color: rgba(22,163,74,0.2);">
+      <div class="number" style="color: var(--green);">30s</div>
+      <div class="label">har bir rezyume</div><div class="detail">97% tezroq</div>
+    </div>
+    <div class="stat"><div class="number" style="color: var(--green);">100%</div><div class="label">qamrov</div><div class="detail">har bir ariza tahlil qilinadi</div></div>
+    <div class="stat"><div class="number" style="color: var(--green); font-size: 38px;">O'sha kun</div><div class="label">qisqa ro'yxat tayyor</div></div>
+    <div class="stat"><div class="number" style="color: var(--green);">24/7</div><div class="label">AI ishlaydi</div><div class="detail">to'xtovsiz</div></div>
+  </div>
+  <div class="pipeline-row">
+    <div class="pipeline-step"><div class="dot" style="background: var(--accent-light); color: var(--accent);"><i class="bi bi-cloud-arrow-up"></i></div><div class="name">Yuklash</div><div class="time">PDF / DOCX / Rasm</div></div>
+    <div class="pipeline-arrow"><i class="bi bi-arrow-right"></i></div>
+    <div class="pipeline-step"><div class="dot" style="background: var(--blue-bg); color: var(--blue);"><i class="bi bi-shield-check"></i></div><div class="name">Xavfsizlik</div><div class="time">Zararli kod tekshiruvi</div></div>
+    <div class="pipeline-arrow"><i class="bi bi-arrow-right"></i></div>
+    <div class="pipeline-step"><div class="dot" style="background: var(--purple-bg); color: var(--purple);"><i class="bi bi-file-earmark-text"></i></div><div class="name">Matn ajratish</div><div class="time">OCR qo'llab-quvvatlash</div></div>
+    <div class="pipeline-arrow"><i class="bi bi-arrow-right"></i></div>
+    <div class="pipeline-step"><div class="dot" style="background: var(--green-bg); color: var(--green);"><i class="bi bi-cpu"></i></div><div class="name">AI tahlil</div><div class="time">162+ ko'nikma</div></div>
+    <div class="pipeline-arrow"><i class="bi bi-arrow-right"></i></div>
+    <div class="pipeline-step"><div class="dot" style="background: var(--orange-bg); color: var(--orange);"><i class="bi bi-star"></i></div><div class="name">Natija</div><div class="time">Ball + Tavsiya</div></div>
+  </div>
+  <div class="slide-num">03</div>
+  <div class="slide-logo">HR-System AI Platform</div>
+</div>
+
+<!-- ===== SLIDE 4: DASHBOARD SCREENSHOT ===== -->
+<div class="slide content">
+  <h2>Boshqaruv <span>paneli</span></h2>
+  <p class="subtitle">Barcha HR ma'lumotlar — bir ekranda. Real vaqtda yangilanadi.</p>
+  <div class="browser">
+    <div class="bar">
+      <div class="dots"><span></span><span></span><span></span></div>
+      <div class="url"><i class="bi bi-lock-fill" style="color: var(--green); margin-right: 4px;"></i>hr-system.uz/admin</div>
+    </div>
+    <img src="screenshots/dashboard.png" alt="Admin Dashboard">
+  </div>
+  <div class="screen-label">Admin Dashboard — KPI ko'rsatkichlari, arizalar dinamikasi, AI holati</div>
+  <div class="slide-num">04</div>
+  <div class="slide-logo">HR-System AI Platform</div>
+</div>
+
+<!-- ===== SLIDE 5: KANBAN + APPLICATIONS ===== -->
+<div class="slide content">
+  <h2>Nomzodlar <span>boshqaruvi</span></h2>
+  <p class="subtitle">Kanban doska va arizalar ro'yxati — AI ball bilan avtomatik tartiblash</p>
+  <div class="grid-2">
+    <div>
+      <div class="browser">
+        <div class="bar"><div class="dots"><span></span><span></span><span></span></div><div class="url"><i class="bi bi-lock-fill" style="color: var(--green); margin-right: 4px;"></i>hr-system.uz/admin — Kanban</div></div>
+        <img src="screenshots/kanban.png" alt="Kanban Board">
+      </div>
+      <div class="screen-label">Kanban doska — nomzodlar statuslar bo'yicha</div>
+    </div>
+    <div>
+      <div class="browser">
+        <div class="bar"><div class="dots"><span></span><span></span><span></span></div><div class="url"><i class="bi bi-lock-fill" style="color: var(--green); margin-right: 4px;"></i>hr-system.uz/admin/applications</div></div>
+        <img src="screenshots/applications.png" alt="Applications">
+      </div>
+      <div class="screen-label">Barcha arizalar — Match Score va Test natijasi bilan</div>
+    </div>
+  </div>
+  <div class="slide-num">05</div>
+  <div class="slide-logo">HR-System AI Platform</div>
+</div>
+
+<!-- ===== SLIDE 6: AI ENGINE ===== -->
+<div class="slide content">
+  <h2>Gibrid <span>AI dvigatel</span></h2>
+  <p class="subtitle">Deterministik qoidalar + LLM kuchaytirish = ishonchli natijalar</p>
+  <div class="grid-2">
+    <div class="card">
+      <h3><i class="bi bi-gear-wide-connected" style="background: var(--accent-light); color: var(--accent);"></i> Qoidalar asosi</h3>
+      <ul class="check-list">
+        <li><strong>162+ texnik ko'nikma</strong> — fuzzy matching</li>
+        <li><strong>24 yumshoq ko'nikma</strong> — yetakchilik, jamoaviylik</li>
+        <li><strong>15 til</strong> — daraja aniqlash (A1-C2)</li>
+        <li><strong>Tashqi bog'lanish nol</strong> — to'liq offline ishlaydi</li>
+        <li><strong>Deterministik</strong> — bir xil kirish = bir xil natija</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3><i class="bi bi-bar-chart-line" style="background: var(--blue-bg); color: var(--blue);"></i> AI tahlil natijasi</h3>
+      <ul class="check-list">
+        <li><strong>Match Score</strong> (0-100) shaffof taqsimlash</li>
+        <li><strong>Kuchli tomonlar</strong> — nomzod afzalliklari</li>
+        <li><strong>Zaif tomonlar</strong> — ko'nikma bo'shliqlari</li>
+        <li><strong>Xatarlar</strong> — qizil bayroqlar</li>
+        <li><strong>Intervyu savollari</strong> — shaxsiylashtirilgan</li>
+        <li><strong>HR tavsiyasi</strong> — aniq harakatlar rejasi</li>
+      </ul>
+    </div>
+  </div>
+  <div class="formula-bar">
+    <div>
+      <div class="ftitle">Match Score formulasi</div>
+      <div class="formula"><span style="color: var(--accent);">50%</span> Majburiy ko'nikmalar + <span style="color: var(--orange);">30%</span> Qo'shimcha + <span style="color: var(--blue);">20%</span> Tajriba</div>
+    </div>
+    <div style="font-size: 12px; color: var(--fg3);">Har bir vakansiya uchun sozlanadi</div>
+  </div>
+  <div class="slide-num">06</div>
+  <div class="slide-logo">HR-System AI Platform</div>
+</div>
+
+<!-- ===== SLIDE 7: ANALYTICS ===== -->
+<div class="slide content">
+  <h2>AI <span>Tahlillar</span></h2>
+  <p class="subtitle">Yollash analitikasi va AI operatsiyalari — ma'lumotlarga asoslangan qarorlar</p>
+  <div class="grid-2">
+    <div>
+      <div class="browser">
+        <div class="bar"><div class="dots"><span></span><span></span><span></span></div><div class="url"><i class="bi bi-lock-fill" style="color: var(--green); margin-right: 4px;"></i>hr-system.uz/admin/analytics</div></div>
+        <img src="screenshots/analytics.png" alt="Candidate Analytics">
+      </div>
+      <div class="screen-label">Nomzodlar tahlili — voronka, grafiklar, statistika</div>
+    </div>
+    <div>
+      <div class="browser">
+        <div class="bar"><div class="dots"><span></span><span></span><span></span></div><div class="url"><i class="bi bi-lock-fill" style="color: var(--green); margin-right: 4px;"></i>hr-system.uz/admin/analytics — AI</div></div>
+        <img src="screenshots/ai-operations.png" alt="AI Operations">
+      </div>
+      <div class="screen-label">AI operatsiyalari — xatolik 0, tezlik &lt;1s</div>
+    </div>
+  </div>
+  <div class="slide-num">07</div>
+  <div class="slide-logo">HR-System AI Platform</div>
+</div>
+
+<!-- ===== SLIDE 8: COMMUNICATION ===== -->
+<div class="slide content">
+  <h2>Aloqa <span>tizimi</span></h2>
+  <p class="subtitle">Real vaqtda chat, video suhbatlar, xabarlar — platforma ichida</p>
+  <div class="grid-2">
+    <div>
+      <div class="browser">
+        <div class="bar"><div class="dots"><span></span><span></span><span></span></div><div class="url"><i class="bi bi-lock-fill" style="color: var(--green); margin-right: 4px;"></i>hr-system.uz/admin/chat</div></div>
+        <img src="screenshots/chat-candidate.png" alt="Chat with Candidate">
+      </div>
+      <div class="screen-label">Nomzod bilan chat — suhbatga taklif + video uchrashuv</div>
+    </div>
+    <div>
+      <div class="browser">
+        <div class="bar"><div class="dots"><span></span><span></span><span></span></div><div class="url"><i class="bi bi-lock-fill" style="color: var(--green); margin-right: 4px;"></i>hr-system.uz/admin/meetings</div></div>
+        <img src="screenshots/video-meetings.png" alt="Video Meetings">
+      </div>
+      <div class="screen-label">Video suhbatlar — WebRTC P2P, rejalashtirish</div>
+    </div>
+  </div>
+  <div class="slide-num">08</div>
+  <div class="slide-logo">HR-System AI Platform</div>
+</div>
+
+<!-- ===== SLIDE 9: EMPLOYEE PORTAL ===== -->
+<div class="slide content">
+  <h2>Xodimlar <span>portali</span></h2>
+  <p class="subtitle">KPI kuzatish, AI yordamchi, hujjatlar boshqaruvi — xodim uchun alohida platforma</p>
+  <div class="grid-2">
+    <div>
+      <div class="browser">
+        <div class="bar"><div class="dots"><span></span><span></span><span></span></div><div class="url"><i class="bi bi-lock-fill" style="color: var(--green); margin-right: 4px;"></i>hr-system.uz/employee/dashboard</div></div>
+        <img src="screenshots/employee-portal.png" alt="Employee Portal">
+      </div>
+      <div class="screen-label">Xodim dashboard — KPI, dinamika, tavsiyalar</div>
+    </div>
+    <div>
+      <div class="browser">
+        <div class="bar"><div class="dots"><span></span><span></span><span></span></div><div class="url"><i class="bi bi-lock-fill" style="color: var(--green); margin-right: 4px;"></i>hr-system.uz/employee/kpi</div></div>
+        <img src="screenshots/kpi.png" alt="Employee KPI">
+      </div>
+      <div class="screen-label">KPI sahifasi — metrikalar, tarix, bonus holati</div>
+    </div>
+  </div>
+  <div class="slide-num">09</div>
+  <div class="slide-logo">HR-System AI Platform</div>
+</div>
+
+<!-- ===== SLIDE 10: AI ASSISTANT ===== -->
+<div class="slide content">
+  <h2>AI <span>Yordamchi</span></h2>
+  <p class="subtitle">Xodimlar uchun sun'iy intellekt yordamchisi — KPI, siyosat, ta'til, bonus haqida savollar</p>
+  <div class="grid-2">
+    <div>
+      <div class="browser">
+        <div class="bar"><div class="dots"><span></span><span></span><span></span></div><div class="url"><i class="bi bi-lock-fill" style="color: var(--green); margin-right: 4px;"></i>hr-system.uz/employee/ai-chat</div></div>
+        <img src="screenshots/ai-assistant.png" alt="AI Assistant">
+      </div>
+      <div class="screen-label">AI Assistent — 15 ta niyat toifasi, kontekstli javoblar</div>
+    </div>
+    <div>
+      <div class="card" style="margin-bottom: 16px; height: auto;">
+        <h3><i class="bi bi-cpu" style="background: var(--accent-light); color: var(--accent);"></i> AI imkoniyatlari</h3>
+        <ul class="check-list">
+          <li><strong>KPI tushuntirish</strong> — "Nega mening KPI tushdi?"</li>
+          <li><strong>Bonus so'rov</strong> — "Bonus qachon bo'ladi?"</li>
+          <li><strong>Siyosat qidirish</strong> — "Ta'til qoidalari qanday?"</li>
+          <li><strong>Takomillashtirish</strong> — AI tavsiyalari</li>
+          <li><strong>15 ta toifa</strong> — avtomatik niyat aniqlash</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3><i class="bi bi-graph-up-arrow" style="background: var(--blue-bg); color: var(--blue);"></i> Xodim tahlili</h3>
+        <div class="browser" style="box-shadow: none;">
+          <img src="screenshots/employee-analytics.png" alt="Employee Analytics" style="border-radius: 8px;">
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-num">10</div>
+  <div class="slide-logo">HR-System AI Platform</div>
+</div>
+
+<!-- ===== SLIDE 11: XAVFSIZLIK ===== -->
+<div class="slide content">
+  <h2>Korporativ <span>xavfsizlik</span></h2>
+  <p class="subtitle">Bank darajasidagi xavfsizlik — ma'lumotlar suverenitetiga kafolat</p>
+  <div class="grid-3">
+    <div class="card">
+      <h3><i class="bi bi-lock" style="background: var(--green-bg); color: var(--green);"></i> Autentifikatsiya</h3>
+      <ul class="check-list">
+        <li>Ikki faktorli (TOTP)</li>
+        <li>IP oq ro'yxat</li>
+        <li>Tezlik cheklash</li>
+        <li>Kirish kuzatuvi</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3><i class="bi bi-shield-lock" style="background: var(--blue-bg); color: var(--blue);"></i> Himoya</h3>
+      <ul class="check-list">
+        <li>AES-256 shifrlash</li>
+        <li>Bcrypt-12 parol xeshlash</li>
+        <li>Parol tarixi va muddati</li>
+        <li>PII maskalash</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3><i class="bi bi-clipboard-check" style="background: var(--purple-bg); color: var(--purple);"></i> Muvofiqlik</h3>
+      <ul class="check-list">
+        <li>To'liq audit izi</li>
+        <li>Mahalliy saqlash</li>
+        <li>5 daraja kirish nazorati</li>
+        <li>Fayl skanerlash</li>
+      </ul>
+    </div>
+  </div>
+  <div class="quote-block" style="margin-top: 24px;">
+    <p>Barcha ma'lumotlar sizning serverlaringizda saqlanadi. AI dvigatel mahalliy ishlaydi. Qoidalarga asoslangan tahlil tashqi API chaqiruvlarini talab qilmaydi.</p>
+  </div>
+  <div class="slide-num">11</div>
+  <div class="slide-logo">HR-System AI Platform</div>
+</div>
+
+<!-- ===== SLIDE 12: OLDIN VA KEYIN ===== -->
+<div class="slide content">
+  <h2>Oldin va <span>keyin</span></h2>
+  <p class="subtitle">HR operatsiyalariga o'lchanadigan ta'sir</p>
+  <table class="compare-table">
+    <thead><tr><th>Ko'rsatkich</th><th>Oldin (qo'lda)</th><th>Keyin (HR-System AI)</th><th>Ta'sir</th></tr></thead>
+    <tbody>
+      <tr><td>Har bir rezyume saralash</td><td class="old">15-20 daqiqa</td><td class="new">30 soniya</td><td><span class="badge green">97% tezroq</span></td></tr>
+      <tr><td>Ko'rib chiqilgan arizalar</td><td class="old">50-70%</td><td class="new">100%</td><td><span class="badge green">To'liq qamrov</span></td></tr>
+      <tr><td>Qisqa ro'yxat vaqti</td><td class="old">3-5 kun</td><td class="new">O'sha kun</td><td><span class="badge green">80% tezroq</span></td></tr>
+      <tr><td>Saralash izchilligi</td><td class="old">Ko'rib chiquvchiga bog'liq</td><td class="new">Standart AI mezonlari</td><td><span class="badge green">Nol xatolik</span></td></tr>
+      <tr><td>Audit muvofiqlik</td><td class="old">Qo'lda hujjatlar</td><td class="new">Avtomatik audit izi</td><td><span class="badge green">100% kuzatiladi</span></td></tr>
+      <tr><td>HR soatlari (oyiga 200 ariza)</td><td class="old">50+ soat</td><td class="new">~2 soat</td><td><span class="badge green">96% tejash</span></td></tr>
+    </tbody>
+  </table>
+  <div class="slide-num">12</div>
+  <div class="slide-logo">HR-System AI Platform</div>
+</div>
+
+<!-- ===== SLIDE 13: VAKANSIYALAR (PUBLIC) ===== -->
+<div class="slide content">
+  <h2>Nomzod <span>interfeysi</span></h2>
+  <p class="subtitle">Nomzodlar uchun zamonaviy vakansiyalar sahifasi va ariza topshirish</p>
+  <div class="browser" style="max-width: 900px; margin: 0 auto;">
+    <div class="bar"><div class="dots"><span></span><span></span><span></span></div><div class="url"><i class="bi bi-lock-fill" style="color: var(--green); margin-right: 4px;"></i>hr-system.uz/vacant</div></div>
+    <img src="screenshots/vacancies-public.png" alt="Public Vacancies">
+  </div>
+  <div class="screen-label">Ommaviy vakansiyalar sahifasi — qidirish, filtrlash, ariza topshirish</div>
+  <div class="slide-num">13</div>
+  <div class="slide-logo">HR-System AI Platform</div>
+</div>
+
+<!-- ===== SLIDE 14: YAKUNIY ===== -->
+<div class="slide closing">
+  <div style="position: relative; z-index: 1;">
+    <h1 style="font-size: 48px; font-weight: 900; margin-bottom: 20px; color: var(--fg);">
+      AI <span style="color: var(--accent);">yordam beradi</span>,<br>HR <span style="color: var(--accent);">qaror qabul qiladi</span>
+    </h1>
+    <p style="font-size: 18px; color: var(--fg2); max-width: 560px; margin: 0 auto 40px; line-height: 1.6;">
+      HR-System HR jamoangizni almashtirib bo'lmaydi.<br>U ularga imkoniyat beradi.
+    </p>
+    <div class="closing-stats">
+      <div><div class="val" style="color: var(--green);">97%</div><div>Vaqt tejash</div></div>
+      <div><div class="val" style="color: var(--blue);">100%</div><div>Qamrov</div></div>
+      <div><div class="val" style="color: var(--purple);">24/7</div><div>AI ishlaydi</div></div>
+      <div><div class="val" style="color: var(--accent);">0</div><div>Inson xatosi</div></div>
+    </div>
+    <div class="divider" style="max-width: 400px; margin: 40px auto;"></div>
+    <p style="font-size: 15px; color: var(--fg3);">
+      Jonli demo ko'rishga tayyormisiz?<br>
+      <span style="color: var(--fg2); font-weight: 600;">Keling, amalda ko'raylik.</span>
+    </p>
+  </div>
+  <div class="slide-num">14</div>
+</div>
+
+</body>
+</html>

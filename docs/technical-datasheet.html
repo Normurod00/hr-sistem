@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HR-System AI Platform — Texnik ma'lumotlar varaqasi</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+  :root {
+    --accent: #E52716;
+    --accent-dark: #C41F11;
+    --bg: #ffffff;
+    --fg: #0f172a;
+    --fg2: #475569;
+    --fg3: #94a3b8;
+    --border: #e2e8f0;
+    --surface: #f8fafc;
+    --green: #16a34a;
+    --blue: #2563eb;
+    --purple: #7c3aed;
+    --orange: #d97706;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    color: var(--fg);
+    background: var(--bg);
+    line-height: 1.6;
+    font-size: 14px;
+  }
+
+  @media print {
+    body { font-size: 11px; }
+    .page-break { page-break-before: always; }
+    .no-print { display: none !important; }
+    @page { margin: 15mm; size: A4; }
+  }
+
+  /* ===== COVER PAGE ===== */
+  .cover {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 80px 60px;
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+    color: white;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .cover::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -20%;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(229,39,22,0.15) 0%, transparent 70%);
+    border-radius: 50%;
+  }
+
+  .cover::after {
+    content: '';
+    position: absolute;
+    bottom: -30%;
+    left: -10%;
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, rgba(37,99,235,0.1) 0%, transparent 70%);
+    border-radius: 50%;
+  }
+
+  .cover-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(229,39,22,0.15);
+    border: 1px solid rgba(229,39,22,0.3);
+    color: #ff6b5a;
+    padding: 8px 20px;
+    border-radius: 100px;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    margin-bottom: 32px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .cover-title {
+    font-size: 56px;
+    font-weight: 900;
+    line-height: 1.1;
+    margin-bottom: 20px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .cover-title span { color: var(--accent); }
+
+  .cover-subtitle {
+    font-size: 22px;
+    font-weight: 400;
+    color: #94a3b8;
+    margin-bottom: 48px;
+    max-width: 600px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .cover-meta {
+    display: flex;
+    gap: 32px;
+    font-size: 13px;
+    color: #64748b;
+    position: relative;
+    z-index: 1;
+  }
+
+  .cover-meta strong { color: #cbd5e1; font-weight: 600; }
+
+  .cover-version {
+    position: absolute;
+    bottom: 40px;
+    right: 60px;
+    font-size: 12px;
+    color: #475569;
+    z-index: 1;
+  }
+
+  /* ===== CONTENT PAGES ===== */
+  .page {
+    padding: 48px 60px;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  .section-title {
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--fg);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .section-title .num {
+    background: var(--accent);
+    color: white;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: 800;
+    flex-shrink: 0;
+  }
+
+  .section-desc {
+    color: var(--fg2);
+    font-size: 15px;
+    margin-bottom: 32px;
+    padding-left: 48px;
+  }
+
+  /* ===== TABLES ===== */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 32px;
+    font-size: 13px;
+  }
+
+  table th {
+    background: var(--surface);
+    padding: 12px 16px;
+    text-align: left;
+    font-weight: 700;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--fg2);
+    border-bottom: 2px solid var(--border);
+  }
+
+  table td {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+
+  table tr:last-child td { border-bottom: none; }
+
+  /* ===== CARDS ===== */
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+
+  .card-grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
+  .card-grid.cols-4 { grid-template-columns: repeat(4, 1fr); }
+
+  .metric-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+  }
+
+  .metric-card .label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--fg3);
+    margin-bottom: 6px;
+  }
+
+  .metric-card .value {
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--fg);
+    line-height: 1.2;
+  }
+
+  .metric-card .detail {
+    font-size: 12px;
+    color: var(--fg2);
+    margin-top: 4px;
+  }
+
+  .metric-card.accent {
+    background: linear-gradient(135deg, rgba(229,39,22,0.05), rgba(229,39,22,0.02));
+    border-color: rgba(229,39,22,0.2);
+  }
+
+  /* ===== BADGES ===== */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  .badge.green { background: rgba(22,163,74,0.1); color: var(--green); }
+  .badge.blue { background: rgba(37,99,235,0.1); color: var(--blue); }
+  .badge.purple { background: rgba(124,58,237,0.1); color: var(--purple); }
+  .badge.orange { background: rgba(217,119,6,0.1); color: var(--orange); }
+  .badge.red { background: rgba(229,39,22,0.1); color: var(--accent); }
+
+  /* ===== ARCHITECTURE ===== */
+  .arch-block {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-bottom: 12px;
+  }
+
+  .arch-block h4 {
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .arch-block p {
+    color: var(--fg2);
+    font-size: 13px;
+    margin: 0;
+  }
+
+  .arch-block .tech-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 10px;
+  }
+
+  .tech-tag {
+    background: white;
+    border: 1px solid var(--border);
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--fg2);
+  }
+
+  /* ===== PIPELINE ===== */
+  .pipeline {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin: 24px 0 32px;
+    overflow-x: auto;
+  }
+
+  .pipeline-step {
+    flex: 1;
+    text-align: center;
+    position: relative;
+    padding: 0 8px;
+  }
+
+  .pipeline-step .icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    margin: 0 auto 8px;
+    position: relative;
+    z-index: 2;
+  }
+
+  .pipeline-step .name {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--fg);
+  }
+
+  .pipeline-step .time {
+    font-size: 10px;
+    color: var(--fg3);
+  }
+
+  .pipeline-arrow {
+    width: 40px;
+    height: 2px;
+    background: var(--border);
+    flex-shrink: 0;
+    position: relative;
+  }
+
+  .pipeline-arrow::after {
+    content: '';
+    position: absolute;
+    right: -4px;
+    top: -4px;
+    border: 5px solid transparent;
+    border-left-color: var(--border);
+  }
+
+  /* ===== FOOTER ===== */
+  .page-footer {
+    margin-top: 48px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11px;
+    color: var(--fg3);
+  }
+
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 32px 0;
+  }
+
+  /* ===== HIGHLIGHT BOX ===== */
+  .highlight {
+    background: linear-gradient(135deg, rgba(229,39,22,0.04), rgba(37,99,235,0.04));
+    border: 1px solid rgba(229,39,22,0.15);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-bottom: 24px;
+  }
+
+  .highlight h4 {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 8px;
+  }
+
+  .highlight p {
+    color: var(--fg2);
+    font-size: 13px;
+    margin: 0;
+  }
+
+  .check-list { list-style: none; padding: 0; }
+  .check-list li {
+    padding: 6px 0;
+    font-size: 13px;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .check-list li::before {
+    content: '\2713';
+    color: var(--green);
+    font-weight: 800;
+    flex-shrink: 0;
+  }
+</style>
+</head>
+<body>
+
+<!-- ==================== COVER PAGE ==================== -->
+<div class="cover">
+  <div class="cover-badge"><i class="bi bi-diamond-fill" style="font-size: 10px;"></i> Texnik ma'lumotlar varaqasi</div>
+  <h1 class="cover-title">HR-<span>System</span><br>AI Platforma</h1>
+  <p class="cover-subtitle">Korporativ AI-quvvatli inson resurslarini boshqarish tizimi. Intellektual yollash, xodimlar tahlili va qaror qabul qilishni qo'llab-quvvatlash.</p>
+  <div class="cover-meta">
+    <div><strong>Versiya:</strong> 2.0</div>
+    <div><strong>Sana:</strong> 2026-yil aprel</div>
+    <div><strong>Turkumlash:</strong> Maxfiy</div>
+    <div><strong>Hujjat:</strong> TECH-DS-2026-04</div>
+  </div>
+  <div class="cover-version">HR-System AI Platform &copy; 2026 | Barcha huquqlar himoyalangan</div>
+</div>
+
+<!-- ==================== PAGE 1: OVERVIEW ==================== -->
+<div class="page page-break">
+
+  <div class="section-title"><span class="num">1</span> Tizim haqida umumiy ma'lumot</div>
+  <p class="section-desc">HR-System — nomzodlarni saralash, xodimlar KPI tahlili va yirik tashkilotlar uchun HR qarorlarini qo'llab-quvvatlashni avtomatlashtiradigan korporativ AI platformasi.</p>
+
+  <div class="card-grid cols-4">
+    <div class="metric-card accent">
+      <div class="label">Ishlov berish tezligi</div>
+      <div class="value">30 sek</div>
+      <div class="detail">har bir rezyume tahlili uchun</div>
+    </div>
+    <div class="metric-card">
+      <div class="label">Ko'nikmalar bazasi</div>
+      <div class="value">162+</div>
+      <div class="detail">texnik ko'nikmalar indekslangan</div>
+    </div>
+    <div class="metric-card">
+      <div class="label">Tillar</div>
+      <div class="value">15</div>
+      <div class="detail">tahlil uchun qo'llab-quvvatlanadi</div>
+    </div>
+    <div class="metric-card">
+      <div class="label">Ish vaqti maqsadi</div>
+      <div class="value">99.9%</div>
+      <div class="detail">SLA mavjudligi</div>
+    </div>
+  </div>
+
+  <div class="highlight">
+    <h4>Asosiy qiymat taklifi</h4>
+    <p>Nomzodlarni saralash vaqtini har bir ariza uchun 15-20 daqiqadan 30 soniyagacha qisqartiradi. Barcha arizalar 100% izchil tahlil qilinishini inson xatoligisiz ta'minlaydi. Korporativ boshqaruv talablariga mos keladigan shaffof, tekshiriladigan AI qarorlarini taqdim etadi.</p>
+  </div>
+
+  <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 16px;">Texnologik stek</h3>
+
+  <table>
+    <thead>
+      <tr><th>Qatlam</th><th>Texnologiya</th><th>Versiya</th><th>Maqsad</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><span class="badge blue">Backend</span></td><td>Laravel Framework</td><td>12.x</td><td>Ilova serveri, API, biznes mantiq</td></tr>
+      <tr><td><span class="badge purple">AI dvigatel</span></td><td>FastAPI (Python)</td><td>3.11</td><td>Rezyumeni tahlil qilish, nomzodlarni baholash</td></tr>
+      <tr><td><span class="badge green">Ma'lumotlar bazasi</span></td><td>PostgreSQL</td><td>16</td><td>Asosiy ma'lumotlar ombori, ACID tranzaksiyalar</td></tr>
+      <tr><td><span class="badge orange">Kesh/Navbat</span></td><td>Redis</td><td>7</td><td>Sessiya boshqaruvi, ish navbatlari, keshlash</td></tr>
+      <tr><td><span class="badge red">Frontend</span></td><td>Blade + Tailwind CSS</td><td>4.x</td><td>Server tomonida renderlangan UI, moslashuvchan dizayn</td></tr>
+      <tr><td><span class="badge blue">Real-time</span></td><td>Laravel Reverb</td><td>-</td><td>Chat va bildirishnomalar uchun WebSocket</td></tr>
+      <tr><td><span class="badge purple">OCR</span></td><td>Tesseract</td><td>5.x</td><td>Rasmlardan matn ajratib olish (RU+EN)</td></tr>
+      <tr><td><span class="badge green">Konteyner</span></td><td>Docker Compose</td><td>-</td><td>Barcha xizmatlarni boshqarish</td></tr>
+    </tbody>
+  </table>
+
+  <div class="page-footer">
+    <span>HR-System AI Platform &mdash; Texnik ma'lumotlar varaqasi v2.0</span>
+    <span>1-sahifa</span>
+  </div>
+</div>
+
+<!-- ==================== PAGE 2: AI ARCHITECTURE ==================== -->
+<div class="page page-break">
+
+  <div class="section-title"><span class="num">2</span> AI arxitekturasi</div>
+  <p class="section-desc">Qoidalarga asoslangan tahlilni ixtiyoriy LLM integratsiyasi bilan birlashtiradigan gibrid pipeline, deterministik natijalar va AI kuchaytirish bilan.</p>
+
+  <h3 style="font-size: 16px; font-weight: 700; margin: 0 0 16px;">Ishlov berish pipeline</h3>
+
+  <div style="display: flex; align-items: center; justify-content: space-between; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin-bottom: 24px; gap: 8px; flex-wrap: wrap;">
+    <div style="text-align: center; flex: 1; min-width: 80px;">
+      <div style="width: 44px; height: 44px; border-radius: 50%; background: var(--accent); color: white; display: flex; align-items: center; justify-content: center; margin: 0 auto 6px; font-size: 18px;"><i class="bi bi-cloud-arrow-up"></i></div>
+      <div style="font-size: 11px; font-weight: 700;">Yuklash</div>
+      <div style="font-size: 10px; color: var(--fg3);">PDF/DOCX/IMG</div>
+    </div>
+    <div style="color: var(--fg3);"><i class="bi bi-arrow-right"></i></div>
+    <div style="text-align: center; flex: 1; min-width: 80px;">
+      <div style="width: 44px; height: 44px; border-radius: 50%; background: var(--blue); color: white; display: flex; align-items: center; justify-content: center; margin: 0 auto 6px; font-size: 18px;"><i class="bi bi-shield-check"></i></div>
+      <div style="font-size: 11px; font-weight: 700;">Xavfsizlik tekshiruvi</div>
+      <div style="font-size: 10px; color: var(--fg3);">Zararli dastur tekshiruvi</div>
+    </div>
+    <div style="color: var(--fg3);"><i class="bi bi-arrow-right"></i></div>
+    <div style="text-align: center; flex: 1; min-width: 80px;">
+      <div style="width: 44px; height: 44px; border-radius: 50%; background: var(--purple); color: white; display: flex; align-items: center; justify-content: center; margin: 0 auto 6px; font-size: 18px;"><i class="bi bi-file-earmark-text"></i></div>
+      <div style="font-size: 11px; font-weight: 700;">Matn ajratish</div>
+      <div style="font-size: 10px; color: var(--fg3);">OCR zaxira</div>
+    </div>
+    <div style="color: var(--fg3);"><i class="bi bi-arrow-right"></i></div>
+    <div style="text-align: center; flex: 1; min-width: 80px;">
+      <div style="width: 44px; height: 44px; border-radius: 50%; background: var(--green); color: white; display: flex; align-items: center; justify-content: center; margin: 0 auto 6px; font-size: 18px;"><i class="bi bi-cpu"></i></div>
+      <div style="font-size: 11px; font-weight: 700;">AI tahlil</div>
+      <div style="font-size: 10px; color: var(--fg3);">Gibrid pipeline</div>
+    </div>
+    <div style="color: var(--fg3);"><i class="bi bi-arrow-right"></i></div>
+    <div style="text-align: center; flex: 1; min-width: 80px;">
+      <div style="width: 44px; height: 44px; border-radius: 50%; background: var(--orange); color: white; display: flex; align-items: center; justify-content: center; margin: 0 auto 6px; font-size: 18px;"><i class="bi bi-star"></i></div>
+      <div style="font-size: 11px; font-weight: 700;">Ball + Xulosa</div>
+      <div style="font-size: 10px; color: var(--fg3);">0-100 moslik</div>
+    </div>
+  </div>
+
+  <div class="arch-block">
+    <h4><i class="bi bi-gear-wide-connected" style="color: var(--accent);"></i> Gibrid AI dvigatel</h4>
+    <p>Deterministik qoidalarga asoslangan tahlilni (162+ ko'nikma, noaniq moslik, regex shablonlar) ixtiyoriy LLM kuchaytirish (Gemini/Claude/GPT) bilan birlashtiradi. Qoidalarga asoslangan dvigatel API bog'liqligisiz to'liq oflayn ishlaydi. LLM mavjud bo'lganda kengaytirilgan tabiiy tilni tushunishni ta'minlaydi.</p>
+    <div class="tech-tags">
+      <span class="tech-tag">Qoidalarga asoslangan tahlilchi</span>
+      <span class="tech-tag">Noaniq moslik (0.85 chegara)</span>
+      <span class="tech-tag">LLM zaxira</span>
+      <span class="tech-tag">Javob tekshiruvi</span>
+      <span class="tech-tag">Audit jurnali</span>
+    </div>
+  </div>
+
+  <div class="arch-block">
+    <h4><i class="bi bi-shield-check" style="color: var(--blue);"></i> Hujjat xavfsizligi skaneri</h4>
+    <p>Har bir yuklangan fayl ishlov berishdan oldin ko'p qatlamli xavfsizlik tekshiruvidan o'tadi: magic byte tekshiruvi, zararli dastur imzosini aniqlash, makros skanerlash, in'yeksiya shablonini aniqlash.</p>
+    <div class="tech-tags">
+      <span class="tech-tag">Magic Bytes tekshiruvi</span>
+      <span class="tech-tag">PDF JavaScript skaneri</span>
+      <span class="tech-tag">VBA Makro aniqlash</span>
+      <span class="tech-tag">SQL/Shell in'yeksiya filtri</span>
+      <span class="tech-tag">Fayl hajmi tekshiruvi</span>
+    </div>
+  </div>
+
+  <h3 style="font-size: 16px; font-weight: 700; margin: 24px 0 16px;">Match Score algoritmi</h3>
+
+  <table>
+    <thead>
+      <tr><th>Komponent</th><th>Vazn</th><th>Usul</th><th>Tavsif</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Majburiy ko'nikmalar</strong></td>
+        <td><span class="badge red">50%</span></td>
+        <td>Aniq + Noaniq + Taxallus</td>
+        <td>Talab qilinadigan ko'nikmalar qamrovi. 162+ texnik ko'nikmalarni taxalluslar va toifa xaritasi bilan qo'llab-quvvatlaydi</td>
+      </tr>
+      <tr>
+        <td><strong>Qo'shimcha ko'nikmalar</strong></td>
+        <td><span class="badge orange">30%</span></td>
+        <td>Aniq + Noaniq + Taxallus</td>
+        <td>Kerakli ko'nikmalar qamrovi xuddi shu moslik algoritmi bilan</td>
+      </tr>
+      <tr>
+        <td><strong>Tajriba</strong></td>
+        <td><span class="badge blue">20%</span></td>
+        <td>Nisbat (1.0 da cheklangan)</td>
+        <td>Nomzod yillari / Talab qilinadigan yillar. 7 ta regex shablon orqali ajratib olinadi (RU+EN)</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="highlight">
+    <h4>AI tahlil natijasi</h4>
+    <p>Har bir nomzod uchun tizim quyidagilarni yaratadi: Moslik balli (0-100), Kuchli tomonlar tahlili, Zaif tomonlarni aniqlash, Xavf baholash, Shaxsiylashtirilgan suhbat savollari va amaliy keyingi qadamlar bilan HR tavsiyasi. Barcha natijalar ishonch ballari va to'liq audit izini o'z ichiga oladi.</p>
+  </div>
+
+  <div class="page-footer">
+    <span>HR-System AI Platform &mdash; Texnik ma'lumotlar varaqasi v2.0</span>
+    <span>2-sahifa</span>
+  </div>
+</div>
+
+<!-- ==================== PAGE 3: CAPABILITIES ==================== -->
+<div class="page page-break">
+
+  <div class="section-title"><span class="num">3</span> Platforma imkoniyatlari</div>
+  <p class="section-desc">Ishga qabul qilishdan xodimlarni rivojlantirishgacha to'liq HR hayot aylanishini boshqarish.</p>
+
+  <div class="card-grid">
+    <div class="arch-block">
+      <h4><i class="bi bi-people" style="color: var(--accent);"></i> AI yollash</h4>
+      <ul class="check-list">
+        <li>Avtomatlashtirilgan rezyume tahlili (PDF, DOCX, OCR bilan rasmlar)</li>
+        <li>Shaffof taqsimot bilan AI nomzod baholash</li>
+        <li>Kuchli/Zaif tomonlar/Xavflar tahlili</li>
+        <li>Avtomatik yaratilgan suhbat savollari</li>
+        <li>Paketli ishlov berish (10 fayl, 20 nomzod)</li>
+        <li>Sudrab tashlash ish jarayoni bilan Kanban taxtasi</li>
+        <li>AI belgisi bilan PDF/Excel eksporti</li>
+      </ul>
+    </div>
+    <div class="arch-block">
+      <h4><i class="bi bi-graph-up-arrow" style="color: var(--blue);"></i> Xodimlar portali</h4>
+      <ul class="check-list">
+        <li>Trend vizualizatsiyasi bilan KPI kuzatuvi</li>
+        <li>AI quvvatli KPI tushuntirishi va tavsiyalar</li>
+        <li>AI chat yordamchisi (15 ta niyat toifasi)</li>
+        <li>Qidiruv bilan kompaniya siyosati kutubxonasi</li>
+        <li>AI tahlili bilan hujjat boshqaruvi</li>
+        <li>Xodimlar chati (HR-Xodim aloqasi)</li>
+        <li>Ko'p tilli interfeys (RU, EN, UZ)</li>
+      </ul>
+    </div>
+    <div class="arch-block">
+      <h4><i class="bi bi-award" style="color: var(--green);"></i> Tan olish tizimi</h4>
+      <ul class="check-list">
+        <li>Tasdiqlash ish jarayoni bilan hamkasblar nominatsiyasi</li>
+        <li>Ballar tizimi (yig'ish, kuzatish, reyting jadvali)</li>
+        <li>Oy/Chorak/Yil xodimi mukofotlari</li>
+        <li>Sertifikatlar bilan Shon-sharaf zali</li>
+        <li>G'oliblarni tanlash uchun avtomatik algoritm</li>
+        <li>Apellyatsiya bilan intizom boshqaruvi</li>
+      </ul>
+    </div>
+    <div class="arch-block">
+      <h4><i class="bi bi-chat-dots" style="color: var(--purple);"></i> Kommunikatsiya</h4>
+      <ul class="check-list">
+        <li>Real-time chat (WebSocket)</li>
+        <li>Video suhbatlar (WebRTC P2P)</li>
+        <li>Taklifnomalar bilan uchrashuv rejalashtirish</li>
+        <li>SMS/Email bildirishnomalar</li>
+        <li>Push bildirishnomalar (real-time qo'ng'iroq)</li>
+        <li>Nomzod test platformasi (avtomatik yaratilgan)</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3 style="font-size: 16px; font-weight: 700; margin: 8px 0 16px;">Hujjatlarni qayta ishlash imkoniyatlari</h3>
+
+  <table>
+    <thead>
+      <tr><th>Format</th><th>Usul</th><th>Tillar</th><th>Maks. hajm</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>PDF</td><td>pdfplumber <i class="bi bi-arrow-right" style="font-size: 11px;"></i> PyPDF2 <i class="bi bi-arrow-right" style="font-size: 11px;"></i> OCR zaxira</td><td>Barchasi (matn), RU+EN (OCR)</td><td>10 MB</td></tr>
+      <tr><td>DOCX</td><td>python-docx (paragraflar + jadvallar)</td><td>Barchasi</td><td>10 MB</td></tr>
+      <tr><td>DOC</td><td>Ikkilik tahlil</td><td>Barchasi</td><td>10 MB</td></tr>
+      <tr><td>TXT/RTF</td><td>To'g'ridan-to'g'ri o'qish (ko'p kodlash)</td><td>UTF-8, CP1251, Latin-1</td><td>10 MB</td></tr>
+      <tr><td>JPG/PNG/BMP/TIFF</td><td>Tesseract OCR (DPI 300)</td><td>Ruscha + Inglizcha</td><td>10 MB</td></tr>
+    </tbody>
+  </table>
+
+  <h3 style="font-size: 16px; font-weight: 700; margin: 8px 0 16px;">AI chat niyat toifalari</h3>
+
+  <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px;">
+    <span class="badge blue">KPI tushuntirish</span>
+    <span class="badge blue">KPI yaxshilash</span>
+    <span class="badge green">Ta'til qoldig'i</span>
+    <span class="badge green">Ta'til so'rovi</span>
+    <span class="badge purple">Ish haqi so'rovi</span>
+    <span class="badge purple">Bonus savoli</span>
+    <span class="badge orange">Intizom</span>
+    <span class="badge orange">Tan olish</span>
+    <span class="badge red">O'qitish</span>
+    <span class="badge red">Jadval</span>
+    <span class="badge blue">Siyosat qidiruvi</span>
+    <span class="badge green">Imtiyozlar</span>
+    <span class="badge purple">Salomlashish</span>
+    <span class="badge purple">Imkoniyatlar</span>
+    <span class="badge orange">Suhbat</span>
+  </div>
+
+  <div class="page-footer">
+    <span>HR-System AI Platform &mdash; Texnik ma'lumotlar varaqasi v2.0</span>
+    <span>3-sahifa</span>
+  </div>
+</div>
+
+<!-- ==================== PAGE 4: SECURITY ==================== -->
+<div class="page page-break">
+
+  <div class="section-title"><span class="num">4</span> Xavfsizlik va muvofiqlik</div>
+  <p class="section-desc">Moliya institutlari va tartibga solinadigan sohalar uchun mo'ljallangan korporativ darajadagi xavfsizlik.</p>
+
+  <div class="card-grid cols-3">
+    <div class="metric-card">
+      <div class="label">Autentifikatsiya</div>
+      <div class="value" style="font-size: 18px;">2FA + TOTP</div>
+      <div class="detail">Google Authenticator bilan mos</div>
+    </div>
+    <div class="metric-card">
+      <div class="label">Shifrlash</div>
+      <div class="value" style="font-size: 18px;">AES-256</div>
+      <div class="detail">Sessiya + saqlangan ma'lumotlar</div>
+    </div>
+    <div class="metric-card">
+      <div class="label">Parol</div>
+      <div class="value" style="font-size: 18px;">Bcrypt-12</div>
+      <div class="detail">+ tarix + muddati tugashi</div>
+    </div>
+  </div>
+
+  <table>
+    <thead>
+      <tr><th>Xavfsizlik funksiyasi</th><th>Amalga oshirish</th><th>Holat</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Ikki bosqichli autentifikatsiya</td><td>TOTP (RFC 6238) tiklash kodlari bilan</td><td><span class="badge green">Faol</span></td></tr>
+      <tr><td>IP oq ro'yxati</td><td>Muddati tugash bilan sozlanadigan ishonchli IP-lar</td><td><span class="badge green">Faol</span></td></tr>
+      <tr><td>Kirish urinishlarini kuzatish</td><td>IP, user-agent, vaqt belgisi jurnali</td><td><span class="badge green">Faol</span></td></tr>
+      <tr><td>Tezlikni cheklash</td><td>5/daqiqa kirish, 60/daqiqa API, 30/daqiqa AI</td><td><span class="badge green">Faol</span></td></tr>
+      <tr><td>Parol siyosati</td><td>Kamida 8 belgi, tarix tekshiruvi, majburiy muddati tugashi</td><td><span class="badge green">Faol</span></td></tr>
+      <tr><td>Sessiya xavfsizligi</td><td>Shifrlangan, Xavfsiz cookie, SameSite=Strict</td><td><span class="badge green">Faol</span></td></tr>
+      <tr><td>CSRF himoyasi</td><td>Barcha formalarda tokenga asoslangan</td><td><span class="badge green">Faol</span></td></tr>
+      <tr><td>SQL in'yeksiya</td><td>Parametrlangan so'rovlar (nol xom SQL)</td><td><span class="badge green">Himoyalangan</span></td></tr>
+      <tr><td>XSS himoyasi</td><td>e() va nl2br(e()) orqali chiqishni ekranlashtirish</td><td><span class="badge green">Himoyalangan</span></td></tr>
+      <tr><td>Fayl yuklash xavfsizligi</td><td>Magic bytes tekshiruvi + zararli dastur skaneri</td><td><span class="badge green">Faol</span></td></tr>
+      <tr><td>Fayl nomi tozalash</td><td>Yo'l o'tish oldini olish, null bayt o'chirish</td><td><span class="badge green">Faol</span></td></tr>
+      <tr><td>Audit izi</td><td>Barcha xodimlar harakatlari vaqt belgilari bilan jurnalga yozilgan</td><td><span class="badge green">Faol</span></td></tr>
+      <tr><td>API token xavfsizligi</td><td>random_bytes(32) + SHA256 xesh, 24 soat muddati</td><td><span class="badge green">Faol</span></td></tr>
+      <tr><td>Ma'lumotlarni maskalash</td><td>LLM ishlov berishdan oldin shaxsiy ma'lumotlar maskalangan (kartalar, pasport, PINFL)</td><td><span class="badge green">Faol</span></td></tr>
+    </tbody>
+  </table>
+
+  <div class="highlight">
+    <h4>Ma'lumotlar suvereniteti</h4>
+    <p>Barcha nomzod va xodimlar ma'lumotlari faqat tashkilotning PostgreSQL ma'lumotlar bazasida saqlanadi. AI dvigatel Docker muhitida on-premise ishlaydi. Qoidalarga asoslangan tahlil nol tashqi API chaqiruvlarini talab qiladi. LLM integratsiyasi ixtiyoriy bo'lib, to'liq oflayn ishlash uchun o'chirib qo'yilishi mumkin.</p>
+  </div>
+
+  <h3 style="font-size: 16px; font-weight: 700; margin: 8px 0 16px;">Rolga asoslangan kirish nazorati</h3>
+
+  <table>
+    <thead>
+      <tr><th>Rol</th><th>Boshqaruv paneli</th><th>Nomzodlar</th><th>Xodimlar</th><th>Tahlillar</th><th>Xavfsizlik</th><th>AI sozlamalari</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>Nomzod</strong></td><td>-</td><td>Faqat o'zi</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>
+      <tr><td><strong>Xodim</strong></td><td>Shaxsiy KPI</td><td>-</td><td>Shaxsiy profil</td><td>-</td><td>-</td><td>-</td></tr>
+      <tr><td><strong>Menejer</strong></td><td>Jamoa KPI</td><td>-</td><td>Jamoa ko'rinishi</td><td>-</td><td>-</td><td>-</td></tr>
+      <tr><td><strong>HR</strong></td><td>To'liq</td><td>To'liq</td><td>To'liq</td><td>To'liq</td><td>-</td><td>-</td></tr>
+      <tr><td><strong>Admin</strong></td><td>To'liq</td><td>To'liq</td><td>To'liq</td><td>To'liq</td><td>To'liq</td><td>To'liq</td></tr>
+    </tbody>
+  </table>
+
+  <div class="page-footer">
+    <span>HR-System AI Platform &mdash; Texnik ma'lumotlar varaqasi v2.0</span>
+    <span>4-sahifa</span>
+  </div>
+</div>
+
+<!-- ==================== PAGE 5: PERFORMANCE & DEPLOYMENT ==================== -->
+<div class="page page-break">
+
+  <div class="section-title"><span class="num">5</span> Ishlash va joylashtirish</div>
+  <p class="section-desc">Masshtablilik va yuqori mavjudlik uchun mo'ljallangan konteynerlashtirilgan arxitektura.</p>
+
+  <h3 style="font-size: 16px; font-weight: 700; margin: 0 0 16px;">Ishlash ko'rsatkichlari</h3>
+
+  <div class="card-grid cols-4">
+    <div class="metric-card accent">
+      <div class="label">Rezyume tahlili</div>
+      <div class="value">2-5s</div>
+      <div class="detail">PDF matn ajratish</div>
+    </div>
+    <div class="metric-card">
+      <div class="label">AI tahlil</div>
+      <div class="value">3-8s</div>
+      <div class="detail">To'liq nomzod tahlili</div>
+    </div>
+    <div class="metric-card">
+      <div class="label">Moslik balli</div>
+      <div class="value">&lt;1s</div>
+      <div class="detail">Lokal hisoblash</div>
+    </div>
+    <div class="metric-card">
+      <div class="label">Paket (10 fayl)</div>
+      <div class="value">15-30s</div>
+      <div class="detail">Parallel ishlov berish</div>
+    </div>
+  </div>
+
+  <h3 style="font-size: 16px; font-weight: 700; margin: 8px 0 16px;">Docker xizmatlari</h3>
+
+  <table>
+    <thead>
+      <tr><th>Xizmat</th><th>Rasm</th><th>Port</th><th>Resurslar</th><th>Salomatlik tekshiruvi</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>app</strong> (Laravel)</td><td>php:8.4-fpm-alpine</td><td>9000</td><td>512MB RAM</td><td>FPM ping</td></tr>
+      <tr><td><strong>worker</strong> (Navbat)</td><td>php:8.4-fpm-alpine</td><td>-</td><td>256MB RAM</td><td>Supervisor</td></tr>
+      <tr><td><strong>ai</strong> (FastAPI)</td><td>python:3.11-slim</td><td>8095</td><td>1GB RAM</td><td>HTTP /health</td></tr>
+      <tr><td><strong>db</strong> (PostgreSQL)</td><td>postgres:16-alpine</td><td>5432</td><td>512MB RAM</td><td>pg_isready</td></tr>
+      <tr><td><strong>redis</strong> (Kesh)</td><td>redis:7-alpine</td><td>6379</td><td>128MB RAM</td><td>redis-cli ping</td></tr>
+      <tr><td><strong>nginx</strong> (Proksi)</td><td>nginx:alpine</td><td>80/443</td><td>64MB RAM</td><td>-</td></tr>
+    </tbody>
+  </table>
+
+  <h3 style="font-size: 16px; font-weight: 700; margin: 8px 0 16px;">Masshtablash yo'li</h3>
+
+  <div class="card-grid">
+    <div class="arch-block">
+      <h4><i class="bi bi-hdd-rack" style="color: var(--green);"></i> Hozirgi: Yagona server</h4>
+      <p>Barcha xizmatlar bitta mashinada. 50-100 bir vaqtda foydalanuvchi, 500+ rezyume/kun. 5000 gacha xodimlarga ega tashkilotlar uchun mos.</p>
+    </div>
+    <div class="arch-block">
+      <h4><i class="bi bi-grid-3x3-gap" style="color: var(--blue);"></i> Masshtab: Kubernetes</h4>
+      <p>AI ishchilar va veb serverlarni gorizontal masshtablash. Ma'lumotlar bazasi replikatsiyasi. Redis klaster. 10,000+ xodimlar, 5,000+ rezyume/kunni boshqaradi.</p>
+    </div>
+  </div>
+
+  <h3 style="font-size: 16px; font-weight: 700; margin: 8px 0 16px;">Minimal server talablari</h3>
+
+  <table>
+    <thead>
+      <tr><th>Komponent</th><th>Minimal</th><th>Tavsiya etilgan</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>CPU</td><td>4 yadro</td><td>8 yadro</td></tr>
+      <tr><td>RAM</td><td>8 GB</td><td>16 GB</td></tr>
+      <tr><td>Xotira</td><td>50 GB SSD</td><td>200 GB NVMe</td></tr>
+      <tr><td>OS</td><td>Ubuntu 22.04 LTS</td><td>Ubuntu 24.04 LTS</td></tr>
+      <tr><td>Tarmoq</td><td>100 Mbps</td><td>1 Gbps</td></tr>
+    </tbody>
+  </table>
+
+  <div class="page-footer">
+    <span>HR-System AI Platform &mdash; Texnik ma'lumotlar varaqasi v2.0</span>
+    <span>5-sahifa</span>
+  </div>
+</div>
+
+<!-- ==================== PAGE 6: ROI ==================== -->
+<div class="page page-break">
+
+  <div class="section-title"><span class="num">6</span> Biznes ta'siri va ROI</div>
+  <p class="section-desc">HR samaradorligi, sifati va xarajatlarni kamaytirishda o'lchovli yaxshilanishlar.</p>
+
+  <div class="card-grid cols-3">
+    <div class="metric-card accent">
+      <div class="label">Vaqt tejash</div>
+      <div class="value">97%</div>
+      <div class="detail">15 daqiqa <i class="bi bi-arrow-right" style="font-size: 11px;"></i> 30 sek har bir rezyume uchun</div>
+    </div>
+    <div class="metric-card">
+      <div class="label">Qamrov</div>
+      <div class="value">100%</div>
+      <div class="detail">Har bir ariza tahlil qilingan</div>
+    </div>
+    <div class="metric-card">
+      <div class="label">Xatolik kamaytirish</div>
+      <div class="value">100%</div>
+      <div class="detail">Izchil AI baholash</div>
+    </div>
+  </div>
+
+  <h3 style="font-size: 16px; font-weight: 700; margin: 8px 0 16px;">Oldin va keyin</h3>
+
+  <table>
+    <thead>
+      <tr><th>Ko'rsatkich</th><th>Qo'lda jarayon</th><th>HR-System AI bilan</th><th>Yaxshilanish</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Har bir nomzodni saralash vaqti</td><td>15-20 daqiqa</td><td>30 soniya</td><td><span class="badge green">97% tezroq</span></td></tr>
+      <tr><td>Ko'rib chiqilgan arizalar</td><td>50-70% (imkoniyat bilan cheklangan)</td><td>100%</td><td><span class="badge green">+30-50%</span></td></tr>
+      <tr><td>Qisqa ro'yxatgacha vaqt</td><td>3-5 ish kuni</td><td>O'sha kuni</td><td><span class="badge green">80% tezroq</span></td></tr>
+      <tr><td>Saralash izchilligi</td><td>Tekshiruvchiga qarab farq qiladi</td><td>Standartlashtirilgan AI mezonlari</td><td><span class="badge green">Nol xatolik</span></td></tr>
+      <tr><td>Audit muvofiqlik</td><td>Qo'lda hujjatlashtirish</td><td>Avtomatik audit izi</td><td><span class="badge green">100% kuzatilgan</span></td></tr>
+      <tr><td>HR imkoniyati (200 ariza/oy)</td><td>50+ soat qo'lda ish</td><td>~2 soat faqat ko'rib chiqish</td><td><span class="badge green">96% kamaytirish</span></td></tr>
+      <tr><td>KPI tushuntirish</td><td>Har bir xodim uchun 30 daqiqa</td><td>Tezkor AI tushuntirish</td><td><span class="badge green">Tezkor</span></td></tr>
+      <tr><td>Suhbatga tayyorgarlik</td><td>Har bir nomzod uchun 20-30 daqiqa</td><td>AI yaratgan savollar</td><td><span class="badge green">Avtomatik</span></td></tr>
+    </tbody>
+  </table>
+
+  <div class="highlight">
+    <h4>ROI hisob-kitobi (200 ariza/oy)</h4>
+    <p>
+      <strong>Qo'lda xarajat:</strong> 200 ariza &times; 20 daqiqa = 67 soat &times; $15/soat = $1,005/oy<br>
+      <strong>AI bilan:</strong> 200 ariza &times; 2 daqiqa ko'rib chiqish = 7 soat &times; $15/soat = $105/oy<br>
+      <strong>Oylik tejamkorlik:</strong> $900 (saralash xarajatlarida 90% kamaytirish)<br>
+      <strong>Yillik tejamkorlik:</strong> $10,800 + yollash sifati yaxshilangan + to'ldirish vaqti qisqargan
+    </p>
+  </div>
+
+  <div class="divider"></div>
+
+  <div style="text-align: center; padding: 24px 0;">
+    <p style="font-size: 20px; font-weight: 800; color: var(--fg); margin-bottom: 8px;">HR operatsiyalaringizni o'zgartirishga tayyormisiz?</p>
+    <p style="color: var(--fg2); font-size: 14px;">Shaxsiy demo va joylashtirish rejasini so'rang.</p>
+  </div>
+
+  <div class="page-footer">
+    <span>HR-System AI Platform &mdash; Texnik ma'lumotlar varaqasi v2.0</span>
+    <span>6-sahifa</span>
+  </div>
+</div>
+
+</body>
+</html>

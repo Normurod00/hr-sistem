@@ -36,7 +36,7 @@
 </head>
 <body>
     <div class="certificate">
-        <div class="logo">{{ config('app.name', 'HR-BRB') }}</div>
+        <div class="logo">{{ config('app.name', 'HR-System') }}</div>
         <div class="subtitle">Сертификат признания</div>
 
         <div class="title">Настоящим удостоверяется, что</div>
